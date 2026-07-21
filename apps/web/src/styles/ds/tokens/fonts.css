@@ -1,0 +1,15 @@
+/* ───────────────────────────────────────────────────────────
+   Shakir — Webfonts (CDN stand-ins)
+
+   Anton          → Druk-like condensed display (Google Fonts)
+   JetBrains Mono → data / code / IDs           (Google Fonts)
+   Clash Display  → mixed-case display          (Fontshare)
+   General Sans   → body / UI                   (Fontshare)
+
+   These are CDN defaults, not licensed files. Swap + self-host
+   a preferred condensed face (e.g. Druk) via these @font-face/
+   @import targets when licensed.
+   ─────────────────────────────────────────────────────────── */
+
+@import url("https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap");
+@import url("https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&f[]=general-sans@400,500,600&display=swap");

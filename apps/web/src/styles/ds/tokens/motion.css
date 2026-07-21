@@ -1,0 +1,43 @@
+/* ───────────────────────────────────────────────────────────
+   Shakir — Motion
+   Motion guides attention — it never decorates a resting view.
+   One expressive motion moment per view. Easing is never linear.
+   Everything collapses under prefers-reduced-motion.
+   ─────────────────────────────────────────────────────────── */
+
+:root {
+  /* Easing ------------------------------------------------------------ */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);   /* @kind other */
+  --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);      /* @kind other */
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);      /* @kind other */
+
+  /* Durations --------------------------------------------------------- */
+  --dur-fast: 140ms;  /* @kind other */
+  --dur-base: 240ms;  /* @kind other */
+  --dur-slow: 480ms;  /* @kind other */
+
+  /* Stagger — elements arrive one-by-one ------------------------------ */
+  --stagger: 60ms;  /* @kind other */
+}
+
+/* Signature entrance: fade + rise. Gate on a data flag so print /
+   reduced-motion show the end-state, not the hidden start. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes sh-rise {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+}
+
+.sh-rise {
+  animation: sh-rise var(--dur-base) var(--ease-out) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

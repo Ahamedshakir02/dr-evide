@@ -1,0 +1,22 @@
+{
+  "name": "@dr-evide/core",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Taxonomy, emergency red flags, symptom routing, and TrustScore. The one copy.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./sample-doctors.json": "./src/sample-doctors.json"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.3"
+  }
+}

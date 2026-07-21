@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/shakir-design-system-2c28eafe-3041-40b5-a988-286c949578c6/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/shakir-design-system-2c28eafe-3041-40b5-a988-286c949578c6/tokens/colors.css">
+<link rel="stylesheet" href="_ds/shakir-design-system-2c28eafe-3041-40b5-a988-286c949578c6/tokens/typography.css">
+<link rel="stylesheet" href="_ds/shakir-design-system-2c28eafe-3041-40b5-a988-286c949578c6/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/shakir-design-system-2c28eafe-3041-40b5-a988-286c949578c6/tokens/shape.css">
+<link rel="stylesheet" href="_ds/shakir-design-system-2c28eafe-3041-40b5-a988-286c949578c6/tokens/motion.css">
+<link rel="stylesheet" href="_ds/shakir-design-system-2c28eafe-3041-40b5-a988-286c949578c6/tokens/components.css">
+<link rel="stylesheet" href="_ds/shakir-design-system-2c28eafe-3041-40b5-a988-286c949578c6/styles.css">
+<style>
+  *::-webkit-scrollbar { width: 0; height: 0; }
+  .screen { scrollbar-width: none; }
+  a { color: var(--accent-text); }
+  a:hover { color: var(--accent-hover); }
+</style>
+</helmet>
+
+<div style="--accent:#0f766e; --accent-hover:#0c5d57; --accent-press:#0a4a45; --accent-text:#0f766e; --accent-contrast:#ffffff; --accent-2:#137A52; --accent-2-text:#0B4E36; --flare-50:#effcf8; --flare-200:#a6e6da; --flare-700:#0f766e; --focus-ring-color:#0f766e; --focus-ring:0 0 0 3px rgba(15,118,110,0.35); min-height:100vh; background:#EEECE4; padding:56px 48px; box-sizing:border-box; font-family:var(--font-body);">
+
+  <div style="max-width:1760px; margin:0 auto 44px;">
+    <div class="sh-eyebrow" style="margin-bottom:10px;">Mobile UI · 390px · Kerala</div>
+    <div style="display:flex; align-items:baseline; gap:18px; flex-wrap:wrap;">
+      <h1 style="font-family:var(--font-display); font-weight:600; letter-spacing:var(--tracking-display); font-size:44px; line-height:1; margin:0; color:var(--text);">Dr Evide <span style="color:var(--accent-text);">·</span> ഡോക്ടർ എവിടെ?</h1>
+      <span style="font-size:16px; color:var(--text-muted); max-width:520px;">Free-text triage → the right department → nearby doctors ranked by an explainable TrustScore. Never paid placement.</span>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:40px; align-items:flex-start; justify-content:flex-start; flex-wrap:nowrap;">
+
+    <!-- ══════════════ SCREEN 1 — HOME ══════════════ -->
+    <div>
+      <div class="sh-eyebrow" style="margin:0 0 14px 6px;">01 · Home</div>
+      <div style="width:414px; background:#201F1F; border-radius:46px; padding:12px; box-shadow:var(--shadow-md);">
+        <div class="screen" style="position:relative; width:390px; height:820px; background:var(--bg); border-radius:34px; overflow-y:auto; overflow-x:hidden;">
+
+          <!-- status bar -->
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 26px 4px; font-family:var(--font-mono); font-size:13px; font-weight:600; color:var(--text);">
+            <span>9:41</span>
+            <span style="letter-spacing:2px;">● ● ● &nbsp;100%</span>
+          </div>
+
+          <!-- top bar -->
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 22px 6px;">
+            <div>
+              <div style="font-family:var(--font-display); font-weight:600; font-size:22px; letter-spacing:-0.02em; color:var(--text); line-height:1;">Dr Evide</div>
+              <div style="font-size:14px; color:var(--accent-text); font-weight:600; margin-top:2px;">ഡോക്ടർ എവിടെ?</div>
+            </div>
+            <button class="sh-tag" style="height:38px; cursor:pointer;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.4-8 12-8 12s-8-7.6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              Kochi
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+          </div>
+
+          <!-- hero -->
+          <div style="padding:20px 22px 8px;">
+            <h2 style="font-family:var(--font-display); font-weight:600; font-size:32px; line-height:1.1; letter-spacing:-0.02em; color:var(--text); margin:0 0 6px; text-wrap:pretty;">What's bothering you?</h2>
+            <p style="font-size:16px; color:var(--text-muted); margin:0 0 16px;">Tell us in your own words. We'll find the right kind of doctor.</p>
+
+            <div style="position:relative;">
+              <textarea class="sh-textarea" rows="3" style="font-size:17px; line-height:1.5; padding:16px; border-radius:16px; border-color:var(--border-strong);" placeholder="e.g. My hair is falling a lot lately…">My hair is falling a lot lately</textarea>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:8px; margin:10px 2px 16px; color:var(--text-faint); font-size:13px;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+              <span>Malayalam &amp; English both work</span>
+            </div>
+
+            <button class="sh-btn sh-btn--primary sh-btn--lg sh-btn--block" style="height:58px; font-size:18px; border-radius:16px;">
+              Find the right doctor
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </button>
+          </div>
+
+          <!-- divider -->
+          <div style="display:flex; align-items:center; gap:14px; padding:22px 22px 10px;">
+            <div style="flex:1; height:1px; background:var(--border);"></div>
+            <span class="sh-eyebrow">Or pick a department</span>
+            <div style="flex:1; height:1px; background:var(--border);"></div>
+          </div>
+
+          <!-- specialty grid -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:6px 22px 18px;">
+            <!-- card -->
+            <div class="sh-card sh-card--interactive" style="padding:16px; display:flex; flex-direction:column; gap:12px; border-radius:16px;">
+              <span style="width:44px; height:44px; border-radius:12px; background:var(--flare-50); color:var(--accent-text); display:inline-flex; align-items:center; justify-content:center;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 0-8 8"/><path d="M12 2v4"/><path d="M12 8a4 4 0 0 0-4 4"/><path d="M19 16v6"/><path d="M22 19h-6"/></svg>
+              </span>
+              <span style="font-family:var(--font-display); font-weight:600; font-size:17px; color:var(--text);">Skin &amp; Hair</span>
+              <span style="font-size:13px; color:var(--text-faint);">Dermatology</span>
+            </div>
+            <div class="sh-card sh-card--interactive" style="padding:16px; display:flex; flex-direction:column; gap:12px; border-radius:16px;">
+              <span style="width:44px; height:44px; border-radius:12px; background:var(--flare-50); color:var(--accent-text); display:inline-flex; align-items:center; justify-content:center;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+              </span>
+              <span style="font-family:var(--font-display); font-weight:600; font-size:17px; color:var(--text);">Heart</span>
+              <span style="font-size:13px; color:var(--text-faint);">Cardiology</span>
+            </div>
+            <div class="sh-card sh-card--interactive" style="padding:16px; display:flex; flex-direction:column; gap:12px; border-radius:16px;">
+              <span style="width:44px; height:44px; border-radius:12px; background:var(--flare-50); color:var(--accent-text); display:inline-flex; align-items:center; justify-content:center;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2H4a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h3a2 2 0 0 1 2 2v3a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-3a2 2 0 0 1 2-2h3a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-3a2 2 0 0 1-2-2V4a2 2 0 0 0-2-2h-2z"/></svg>
+              </span>
+              <span style="font-family:var(--font-display); font-weight:600; font-size:17px; color:var(--text);">General</span>
+              <span style="font-size:13px; color:var(--text-faint);">Family medicine</span>
+            </div>
+            <div class="sh-card sh-card--interactive" style="padding:16px; display:flex; flex-direction:column; gap:12px; border-radius:16px;">
+              <span style="width:44px; height:44px; border-radius:12px; background:var(--flare-50); color:var(--accent-text); display:inline-flex; align-items:center; justify-content:center;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4.5a3 3 0 0 0-3 3c0 1.5.5 3 .5 5.5 0 3-1 5.5-1 6.5a1.5 1.5 0 0 0 3 .2c.5-2 1-3.2 3.5-3.2s3 1.2 3.5 3.2a1.5 1.5 0 0 0 3-.2c0-1-1-3.5-1-6.5 0-2.5.5-4 .5-5.5a3 3 0 0 0-3-3c-1.5 0-2 .5-3 .5s-1.5-.5-3-.5Z"/></svg>
+              </span>
+              <span style="font-family:var(--font-display); font-weight:600; font-size:17px; color:var(--text);">Teeth</span>
+              <span style="font-size:13px; color:var(--text-faint);">Dental</span>
+            </div>
+            <div class="sh-card sh-card--interactive" style="padding:16px; display:flex; flex-direction:column; gap:12px; border-radius:16px;">
+              <span style="width:44px; height:44px; border-radius:12px; background:var(--flare-50); color:var(--accent-text); display:inline-flex; align-items:center; justify-content:center;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8.5a6 6 0 0 1 12 0c0 3-1 4-1 6a3 3 0 0 1-6 0c0-1-1-1-1-2"/><path d="M8 8.5a2 2 0 0 1 4 0"/></svg>
+              </span>
+              <span style="font-family:var(--font-display); font-weight:600; font-size:17px; color:var(--text);">Ear · Nose</span>
+              <span style="font-size:13px; color:var(--text-faint);">ENT</span>
+            </div>
+            <div class="sh-card sh-card--interactive" style="padding:16px; display:flex; flex-direction:column; gap:12px; border-radius:16px;">
+              <span style="width:44px; height:44px; border-radius:12px; background:var(--flare-50); color:var(--accent-text); display:inline-flex; align-items:center; justify-content:center;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12h.01"/><path d="M15 12h.01"/><path d="M10 16c.5.3 1.2.5 2 .5s1.5-.2 2-.5"/><circle cx="12" cy="12" r="10"/></svg>
+              </span>
+              <span style="font-family:var(--font-display); font-weight:600; font-size:17px; color:var(--text);">Children</span>
+              <span style="font-size:13px; color:var(--text-faint);">Pediatrics</span>
+            </div>
+          </div>
+
+          <!-- trust footer -->
+          <div style="margin:4px 22px 28px; padding:14px 16px; background:var(--surface-2); border:1px solid var(--border); border-radius:4px; display:flex; gap:12px; align-items:flex-start;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-2)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex:none; margin-top:1px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>
+            <div style="font-size:14px; color:var(--text-muted); line-height:1.5;">Doctors are ranked only by verified credentials and real reviews. <strong style="color:var(--text);">No one can pay to rank higher.</strong></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ SCREEN 2 — RESULTS ══════════════ -->
+    <div>
+      <div class="sh-eyebrow" style="margin:0 0 14px 6px;">02 · Results</div>
+      <div style="width:414px; background:#201F1F; border-radius:46px; padding:12px; box-shadow:var(--shadow-md);">
+        <div class="screen" style="position:relative; width:390px; height:820px; background:var(--bg); border-radius:34px; overflow-y:auto; overflow-x:hidden;">
+
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 26px 4px; font-family:var(--font-mono); font-size:13px; font-weight:600; color:var(--text);">
+            <span>9:41</span>
+            <span style="letter-spacing:2px;">● ● ● &nbsp;100%</span>
+          </div>
+
+          <!-- sticky header -->
+          <div style="position:sticky; top:0; z-index:5; background:var(--bg); padding:10px 22px 16px; border-bottom:1px solid var(--border);">
+            <div style="display:flex; align-items:center; gap:14px; margin-bottom:12px;">
+              <button class="sh-iconbtn sh-iconbtn--solid" style="flex:none;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+              </button>
+              <div>
+                <div style="font-family:var(--font-display); font-weight:600; font-size:20px; letter-spacing:-0.02em; color:var(--text); line-height:1.1;">Dermatology</div>
+                <div style="font-size:13px; color:var(--text-faint);">matched to "hair falling a lot"</div>
+              </div>
+            </div>
+
+            <!-- radius slider -->
+            <div style="background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 14px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                <span style="display:flex; align-items:center; gap:7px; font-size:14px; font-weight:600; color:var(--text);">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-text)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.4-8 12-8 12s-8-7.6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                  Within <span class="sh-mono" style="color:var(--accent-text); font-weight:700;">{{ radius }} km</span>
+                </span>
+                <span style="font-size:13px; color:var(--text-muted);"><span class="sh-mono" style="font-weight:700; color:var(--text);">{{ count }}</span> doctors</span>
+              </div>
+              <input type="range" min="1" max="15" value="{{ radius }}" onInput="{{ onRadius }}" style="width:100%; accent-color:var(--accent); height:6px; cursor:pointer;">
+            </div>
+
+            <div style="display:flex; align-items:center; gap:7px; margin-top:12px; font-size:13px; color:var(--accent-2-text); font-weight:600;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M7 12h10"/><path d="M10 18h4"/></svg>
+              Ranked by TrustScore — not by ads
+            </div>
+          </div>
+
+          <!-- results list -->
+          <div style="padding:16px 22px 28px; display:flex; flex-direction:column; gap:14px;">
+
+            <!-- doctor card 1 -->
+            <div class="sh-card sh-card--interactive" style="padding:16px; border-radius:16px;">
+              <div style="display:flex; gap:14px;">
+                <div style="width:56px; height:56px; border-radius:999px; background:var(--flare-50); color:var(--accent-text); font-family:var(--font-display); font-weight:600; font-size:20px; display:flex; align-items:center; justify-content:center; flex:none;">AM</div>
+                <div style="flex:1; min-width:0;">
+                  <div style="font-family:var(--font-display); font-weight:600; font-size:18px; color:var(--text); line-height:1.15;">Dr. Anjali Menon</div>
+                  <div style="font-size:14px; color:var(--text-muted); margin-bottom:8px;">Dermatologist · 12 yrs</div>
+                  <span style="display:inline-flex; align-items:center; gap:5px; height:24px; padding:0 9px; border-radius:999px; background:color-mix(in srgb, var(--accent-2) 12%, transparent); color:var(--accent-2-text); border:1px solid color-mix(in srgb, var(--accent-2) 30%, transparent); font-size:12px; font-weight:600;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>
+                    NMC verified
+                  </span>
+                </div>
+                <div style="text-align:center; flex:none;">
+                  <div style="position:relative; width:56px; height:56px; border-radius:50%; background:conic-gradient(var(--accent) 94%, var(--border) 0); display:flex; align-items:center; justify-content:center;">
+                    <div style="width:44px; height:44px; border-radius:50%; background:var(--surface); display:flex; align-items:center; justify-content:center;">
+                      <span class="sh-mono" style="font-weight:700; font-size:19px; color:var(--accent-text); line-height:1;">94</span>
+                    </div>
+                  </div>
+                  <div class="sh-eyebrow" style="font-size:10px; margin-top:4px;">Trust</div>
+                </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:16px; margin-top:14px; padding-top:14px; border-top:1px solid var(--border);">
+                <span style="display:flex; align-items:center; gap:6px; font-size:14px; color:var(--text-muted);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.4-8 12-8 12s-8-7.6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>2.3 km · Kaloor</span>
+                <span style="display:flex; align-items:center; gap:6px; font-size:14px; color:var(--text-muted);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v12M9 9.5a2.5 2.5 0 0 1 5 0M9 14.5a2.5 2.5 0 0 0 5 0"/></svg><span class="sh-mono" style="font-weight:600; color:var(--text);">₹500</span></span>
+                <span style="margin-left:auto; color:var(--accent-text); display:flex; align-items:center; gap:2px; font-size:14px; font-weight:600;">Profile<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+              </div>
+            </div>
+
+            <!-- doctor card 2 -->
+            <div class="sh-card sh-card--interactive" style="padding:16px; border-radius:16px;">
+              <div style="display:flex; gap:14px;">
+                <div style="width:56px; height:56px; border-radius:999px; background:var(--flare-50); color:var(--accent-text); font-family:var(--font-display); font-weight:600; font-size:20px; display:flex; align-items:center; justify-content:center; flex:none;">RN</div>
+                <div style="flex:1; min-width:0;">
+                  <div style="font-family:var(--font-display); font-weight:600; font-size:18px; color:var(--text); line-height:1.15;">Dr. Rajeev Nair</div>
+                  <div style="font-size:14px; color:var(--text-muted); margin-bottom:8px;">Dermatologist · 9 yrs</div>
+                  <span style="display:inline-flex; align-items:center; gap:5px; height:24px; padding:0 9px; border-radius:999px; background:color-mix(in srgb, var(--accent-2) 12%, transparent); color:var(--accent-2-text); border:1px solid color-mix(in srgb, var(--accent-2) 30%, transparent); font-size:12px; font-weight:600;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>
+                    NMC verified
+                  </span>
+                </div>
+                <div style="text-align:center; flex:none;">
+                  <div style="position:relative; width:56px; height:56px; border-radius:50%; background:conic-gradient(var(--accent) 88%, var(--border) 0); display:flex; align-items:center; justify-content:center;">
+                    <div style="width:44px; height:44px; border-radius:50%; background:var(--surface); display:flex; align-items:center; justify-content:center;">
+                      <span class="sh-mono" style="font-weight:700; font-size:19px; color:var(--accent-text); line-height:1;">88</span>
+                    </div>
+                  </div>
+                  <div class="sh-eyebrow" style="font-size:10px; margin-top:4px;">Trust</div>
+                </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:16px; margin-top:14px; padding-top:14px; border-top:1px solid var(--border);">
+                <span style="display:flex; align-items:center; gap:6px; font-size:14px; color:var(--text-muted);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.4-8 12-8 12s-8-7.6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>3.1 km · Edappally</span>
+                <span style="display:flex; align-items:center; gap:6px; font-size:14px; color:var(--text-muted);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v12M9 9.5a2.5 2.5 0 0 1 5 0M9 14.5a2.5 2.5 0 0 0 5 0"/></svg><span class="sh-mono" style="font-weight:600; color:var(--text);">₹400</span></span>
+                <span style="margin-left:auto; color:var(--accent-text); display:flex; align-items:center; gap:2px; font-size:14px; font-weight:600;">Profile<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+              </div>
+            </div>
+
+            <!-- doctor card 3 -->
+            <div class="sh-card sh-card--interactive" style="padding:16px; border-radius:16px;">
+              <div style="display:flex; gap:14px;">
+                <div style="width:56px; height:56px; border-radius:999px; background:var(--flare-50); color:var(--accent-text); font-family:var(--font-display); font-weight:600; font-size:20px; display:flex; align-items:center; justify-content:center; flex:none;">FB</div>
+                <div style="flex:1; min-width:0;">
+                  <div style="font-family:var(--font-display); font-weight:600; font-size:18px; color:var(--text); line-height:1.15;">Dr. Fathima Beevi</div>
+                  <div style="font-size:14px; color:var(--text-muted); margin-bottom:8px;">Dermatologist · 6 yrs</div>
+                  <span style="display:inline-flex; align-items:center; gap:5px; height:24px; padding:0 9px; border-radius:999px; background:color-mix(in srgb, var(--accent-2) 12%, transparent); color:var(--accent-2-text); border:1px solid color-mix(in srgb, var(--accent-2) 30%, transparent); font-size:12px; font-weight:600;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>
+                    NMC verified
+                  </span>
+                </div>
+                <div style="text-align:center; flex:none;">
+                  <div style="position:relative; width:56px; height:56px; border-radius:50%; background:conic-gradient(var(--accent) 81%, var(--border) 0); display:flex; align-items:center; justify-content:center;">
+                    <div style="width:44px; height:44px; border-radius:50%; background:var(--surface); display:flex; align-items:center; justify-content:center;">
+                      <span class="sh-mono" style="font-weight:700; font-size:19px; color:var(--accent-text); line-height:1;">81</span>
+                    </div>
+                  </div>
+                  <div class="sh-eyebrow" style="font-size:10px; margin-top:4px;">Trust</div>
+                </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:16px; margin-top:14px; padding-top:14px; border-top:1px solid var(--border);">
+                <span style="display:flex; align-items:center; gap:6px; font-size:14px; color:var(--text-muted);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.4-8 12-8 12s-8-7.6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>4.5 km · Kakkanad</span>
+                <span style="display:flex; align-items:center; gap:6px; font-size:14px; color:var(--text-muted);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v12M9 9.5a2.5 2.5 0 0 1 5 0M9 14.5a2.5 2.5 0 0 0 5 0"/></svg><span class="sh-mono" style="font-weight:600; color:var(--text);">₹350</span></span>
+                <span style="margin-left:auto; color:var(--accent-text); display:flex; align-items:center; gap:2px; font-size:14px; font-weight:600;">Profile<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ SCREEN 3 — DOCTOR PROFILE ══════════════ -->
+    <div>
+      <div class="sh-eyebrow" style="margin:0 0 14px 6px;">03 · Doctor profile</div>
+      <div style="width:414px; background:#201F1F; border-radius:46px; padding:12px; box-shadow:var(--shadow-md);">
+        <div class="screen" style="position:relative; width:390px; height:820px; background:var(--bg); border-radius:34px; overflow-y:auto; overflow-x:hidden;">
+
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 26px 4px; font-family:var(--font-mono); font-size:13px; font-weight:600; color:var(--text);">
+            <span>9:41</span>
+            <span style="letter-spacing:2px;">● ● ● &nbsp;100%</span>
+          </div>
+
+          <div style="padding:8px 22px 4px;">
+            <button class="sh-iconbtn sh-iconbtn--solid">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+          </div>
+
+          <!-- profile header -->
+          <div style="padding:8px 22px 18px; display:flex; gap:16px; align-items:center;">
+            <div style="width:72px; height:72px; border-radius:999px; background:var(--flare-50); color:var(--accent-text); font-family:var(--font-display); font-weight:600; font-size:26px; display:flex; align-items:center; justify-content:center; flex:none;">AM</div>
+            <div style="flex:1;">
+              <div style="font-family:var(--font-display); font-weight:600; font-size:23px; letter-spacing:-0.02em; color:var(--text); line-height:1.1;">Dr. Anjali Menon</div>
+              <div style="font-size:15px; color:var(--text-muted); margin-bottom:8px;">Dermatologist · MBBS, MD</div>
+              <span style="display:inline-flex; align-items:center; gap:5px; height:26px; padding:0 10px; border-radius:999px; background:color-mix(in srgb, var(--accent-2) 12%, transparent); color:var(--accent-2-text); border:1px solid color-mix(in srgb, var(--accent-2) 30%, transparent); font-size:13px; font-weight:600;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>
+                NMC verified
+              </span>
+            </div>
+          </div>
+
+          <!-- quick facts -->
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; padding:0 22px 18px;">
+            <div style="background:var(--surface); border:1px solid var(--border); border-radius:4px; padding:12px; text-align:center;">
+              <div class="sh-mono" style="font-weight:700; font-size:19px; color:var(--text);">2.3<span style="font-size:12px; color:var(--text-faint);">km</span></div>
+              <div class="sh-eyebrow" style="font-size:10px; margin-top:3px;">Kaloor</div>
+            </div>
+            <div style="background:var(--surface); border:1px solid var(--border); border-radius:4px; padding:12px; text-align:center;">
+              <div class="sh-mono" style="font-weight:700; font-size:19px; color:var(--text);">₹500</div>
+              <div class="sh-eyebrow" style="font-size:10px; margin-top:3px;">Consult</div>
+            </div>
+            <div style="background:var(--surface); border:1px solid var(--border); border-radius:4px; padding:12px; text-align:center;">
+              <div class="sh-mono" style="font-weight:700; font-size:19px; color:var(--text);">12</div>
+              <div class="sh-eyebrow" style="font-size:10px; margin-top:3px;">Years</div>
+            </div>
+          </div>
+
+          <!-- WHY RANKED — TrustScore breakdown -->
+          <div style="margin:0 22px 18px; background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:18px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+              <span style="font-family:var(--font-display); font-weight:600; font-size:17px; color:var(--text);">Why she ranks here</span>
+              <div style="position:relative; width:58px; height:58px; border-radius:50%; background:conic-gradient(var(--accent) 94%, var(--border) 0); display:flex; align-items:center; justify-content:center; flex:none;">
+                <div style="width:46px; height:46px; border-radius:50%; background:var(--surface); display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                  <span class="sh-mono" style="font-weight:700; font-size:20px; color:var(--accent-text); line-height:1;">94</span>
+                  <span style="font-size:8px; letter-spacing:0.06em; color:var(--text-faint); text-transform:uppercase;">of 100</span>
+                </div>
+              </div>
+            </div>
+            <p style="font-size:13px; color:var(--text-muted); margin:0 0 16px;">TrustScore is built from four public signals. Tap any to see the source.</p>
+
+            <!-- bar rows -->
+            <div style="display:flex; flex-direction:column; gap:14px;">
+              <div>
+                <div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:6px;"><span style="color:var(--text); font-weight:500;">Verified credentials</span><span class="sh-mono" style="color:var(--text-muted);">29 / 30</span></div>
+                <div style="height:8px; border-radius:999px; background:var(--surface-2); overflow:hidden;"><div style="width:97%; height:100%; background:var(--accent); border-radius:999px;"></div></div>
+              </div>
+              <div>
+                <div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:6px;"><span style="color:var(--text); font-weight:500;">Authentic reviews <span style="color:var(--text-faint); font-weight:400;">· 142</span></span><span class="sh-mono" style="color:var(--text-muted);">27 / 30</span></div>
+                <div style="height:8px; border-radius:999px; background:var(--surface-2); overflow:hidden;"><div style="width:90%; height:100%; background:var(--accent); border-radius:999px;"></div></div>
+              </div>
+              <div>
+                <div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:6px;"><span style="color:var(--text); font-weight:500;">Years of experience</span><span class="sh-mono" style="color:var(--text-muted);">20 / 20</span></div>
+                <div style="height:8px; border-radius:999px; background:var(--surface-2); overflow:hidden;"><div style="width:100%; height:100%; background:var(--accent); border-radius:999px;"></div></div>
+              </div>
+              <div>
+                <div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:6px;"><span style="color:var(--text); font-weight:500;">Patient-reported outcomes</span><span class="sh-mono" style="color:var(--text-muted);">18 / 20</span></div>
+                <div style="height:8px; border-radius:999px; background:var(--surface-2); overflow:hidden;"><div style="width:90%; height:100%; background:var(--accent); border-radius:999px;"></div></div>
+              </div>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:8px; margin-top:16px; padding-top:14px; border-top:1px solid var(--border); font-size:13px; color:var(--accent-2-text); font-weight:600;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+              No paid placement. Ever.
+            </div>
+          </div>
+
+          <!-- credentials: verified vs unverified -->
+          <div style="margin:0 22px 18px;">
+            <div class="sh-eyebrow" style="margin-bottom:10px;">Credentials</div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <!-- verified -->
+              <div style="display:flex; gap:12px; align-items:center; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 14px;">
+                <span style="width:34px; height:34px; border-radius:999px; background:color-mix(in srgb, var(--accent-2) 14%, transparent); color:var(--accent-2); display:flex; align-items:center; justify-content:center; flex:none;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                </span>
+                <div style="flex:1;"><div style="font-size:15px; font-weight:600; color:var(--text);">MBBS — Govt. Medical College, Kottayam</div><div style="font-size:12px; color:var(--accent-2-text);">Verified with NMC registry</div></div>
+              </div>
+              <div style="display:flex; gap:12px; align-items:center; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 14px;">
+                <span style="width:34px; height:34px; border-radius:999px; background:color-mix(in srgb, var(--accent-2) 14%, transparent); color:var(--accent-2); display:flex; align-items:center; justify-content:center; flex:none;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                </span>
+                <div style="flex:1;"><div style="font-size:15px; font-weight:600; color:var(--text);">MD Dermatology — AIIMS Delhi</div><div style="font-size:12px; color:var(--accent-2-text);">Verified with NMC registry</div></div>
+              </div>
+              <!-- unverified — visually distinct: dashed + muted -->
+              <div style="display:flex; gap:12px; align-items:center; background:var(--surface-2); border:1px dashed var(--border-strong); border-radius:12px; padding:12px 14px;">
+                <span style="width:34px; height:34px; border-radius:999px; background:var(--surface); color:var(--text-faint); display:flex; align-items:center; justify-content:center; flex:none; border:1px dashed var(--border-strong);">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+                </span>
+                <div style="flex:1;"><div style="font-size:15px; font-weight:600; color:var(--text-muted);">Fellowship in Trichology</div><div style="font-size:12px; color:var(--text-faint);">Self-reported · not yet verified</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- sticky action bar -->
+          <div style="position:sticky; bottom:0; background:var(--bg); border-top:1px solid var(--border); padding:14px 22px; display:flex; gap:12px;">
+            <button class="sh-btn sh-btn--secondary sh-btn--lg" style="flex:1; height:54px; font-size:16px; border-radius:14px;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.4-8 12-8 12s-8-7.6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              Directions
+            </button>
+            <button class="sh-btn sh-btn--primary sh-btn--lg" style="flex:1; height:54px; font-size:16px; border-radius:14px;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z"/></svg>
+              Call now
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ SCREEN 4 — EMERGENCY ══════════════ -->
+    <div>
+      <div class="sh-eyebrow" style="margin:0 0 14px 6px; color:var(--danger);">04 · Emergency interrupt</div>
+      <div style="width:414px; background:#201F1F; border-radius:46px; padding:12px; box-shadow:var(--shadow-md);">
+        <div class="screen" style="position:relative; width:390px; height:820px; background:#B4231A; border-radius:34px; overflow-y:auto; overflow-x:hidden; color:#fff;">
+
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 26px 4px; font-family:var(--font-mono); font-size:13px; font-weight:600; color:rgba(255,255,255,0.9);">
+            <span>9:41</span>
+            <span style="letter-spacing:2px;">● ● ● &nbsp;100%</span>
+          </div>
+
+          <div style="display:flex; flex-direction:column; min-height:calc(820px - 30px); padding:28px 26px 26px; box-sizing:border-box;">
+
+            <div style="text-align:center; padding-top:8px;">
+              <div style="width:96px; height:96px; margin:0 auto 22px; border-radius:999px; background:rgba(255,255,255,0.15); border:2px solid rgba(255,255,255,0.35); display:flex; align-items:center; justify-content:center;">
+                <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+              </div>
+              <div style="font-family:var(--font-body); font-weight:700; font-size:13px; letter-spacing:0.14em; text-transform:uppercase; color:rgba(255,255,255,0.85); margin-bottom:12px;">This could be an emergency</div>
+              <h2 style="font-family:var(--font-display-caps); text-transform:uppercase; font-weight:400; font-size:52px; line-height:0.95; letter-spacing:-0.01em; margin:0 0 18px; color:#fff;">Don't wait —<br>get help now</h2>
+              <p style="font-size:17px; line-height:1.5; color:rgba(255,255,255,0.92); margin:0 auto; max-width:300px;">What you described — <strong style="color:#fff;">chest pain and trouble breathing</strong> — needs urgent care, not an appointment.</p>
+            </div>
+
+            <div style="flex:1;"></div>
+
+            <!-- CALL 108 -->
+            <a href="tel:108" style="text-decoration:none;">
+              <div style="background:#fff; border-radius:20px; padding:22px 24px; display:flex; align-items:center; gap:18px; box-shadow:0 8px 30px rgba(0,0,0,0.25);">
+                <span style="width:60px; height:60px; border-radius:999px; background:#B4231A; display:flex; align-items:center; justify-content:center; flex:none;">
+                  <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z"/></svg>
+                </span>
+                <div>
+                  <div style="font-family:var(--font-display-caps); text-transform:uppercase; font-size:34px; line-height:1; color:#B4231A; letter-spacing:0;">Call 108</div>
+                  <div style="font-size:14px; color:var(--text-muted); font-weight:600; margin-top:3px;">Free ambulance · 24×7 Kerala</div>
+                </div>
+              </div>
+            </a>
+
+            <button style="width:100%; margin-top:14px; height:56px; border-radius:16px; background:rgba(255,255,255,0.16); border:1.5px solid rgba(255,255,255,0.4); color:#fff; font-family:var(--font-body); font-size:16px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.4-8 12-8 12s-8-7.6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              Nearest emergency room
+            </button>
+
+            <div style="text-align:center; margin-top:20px;">
+              <span style="font-size:14px; color:rgba(255,255,255,0.8); border-bottom:1px solid rgba(255,255,255,0.4); padding-bottom:2px; cursor:pointer;">This isn't an emergency — continue anyway</span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="max-width:1760px; margin:36px auto 0; font-size:13px; color:var(--text-faint);">Shakir Design System · accent re-skinned to teal <span class="sh-mono">#0f766e</span> per brief (default Flare coral replaced). Sharp structural panels, soft interactive controls, Clash Display / Anton / JetBrains Mono type preserved.</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { radius: 5 };
+  renderVals() {
+    const r = this.state.radius;
+    // sample density: doctors grow with radius, capped
+    const count = Math.min(3 + Math.round((r - 1) * 1.6), 24);
+    return {
+      radius: r,
+      count: count,
+      onRadius: (e) => this.setState({ radius: parseInt(e.target.value, 10) }),
+    };
+  }
+}
+</script>
+</body>
+</html>

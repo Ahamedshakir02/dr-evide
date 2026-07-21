@@ -1,0 +1,205 @@
+# Engineering Log
+
+A running record of structural changes to Dr Evide: what changed, **why**, and what
+it means for anyone working on the code next. Newest entry first.
+
+Rules for this file:
+
+- One entry per meaningful change, with the reasoning — not just the diff.
+- Anything that alters a **TrustScore number** or an **emergency red flag** must be
+  recorded here, with the `SCORE_VERSION` bump where applicable.
+- Write down what was *considered and rejected*, not only what was done.
+
+---
+
+## 2026-07-22 — v0.2.0: monorepo, verifiable TrustScore, safer red flags
+
+Re-engineering pass. v1 worked, but three structural problems made it unsafe to
+grow: the core logic existed twice, nothing was tested, and the emergency matcher
+had real defects.
+
+### 1. One copy of the logic (`packages/core`)
+
+**Problem.** `src/lib/{types,ranking,taxonomy,format}.ts` and `sample-doctors.json`
+were **byte-identical** copies of `mobile/src/lib/*`. The README documented the
+workaround: *"Change one side, copy to the other."* For a product whose whole claim
+is that the same doctor gets the same honest score everywhere, the scoring function
+existing twice was the deepest flaw in the repo.
+
+**Change.** npm workspaces:
+
+```
+packages/core/   taxonomy, emergency, routing, ranking, geo, format, schemas, sample data
+packages/db/     schema, migrations, doctor query layer
+apps/web/        Next.js — thin, no scoring logic
+apps/mobile/     Expo — thin, imports core, never re-implements it
+```
+
+Both apps now import `@dr-evide/core`. The packages ship TypeScript source rather
+than a build step: Next compiles them via `transpilePackages`, Metro handles TS
+natively. One less build to keep in sync, and stack traces stay readable.
+
+**Remaining duplication, deliberately.** `packages/db/seed.mjs` is plain Node and
+cannot import the TypeScript taxonomy, so it repeats the specialty list.
+`taxonomy-drift.test.ts` parses the seed file and fails CI if the two diverge.
+
+### 2. TrustScore is now reproducible and versioned
+
+**Problem.** Zero tests anywhere in the repo. `scoreDoctor()` called
+`new Date().getFullYear()` internally, so it could not be snapshot-tested and every
+doctor's score silently shifted each 1 January. No version stamp: tuning a weight
+rewrote every score the product had ever shown, with no record.
+
+**Change.**
+
+- Scoring is a pure function of `(doctor, RankingContext)`. `asOfYear` is injected;
+  nothing in `packages/core` reads the clock, the network, or `process.env`.
+- `SCORE_VERSION` (currently `1.0.0`) is stamped on every `RankedDoctor` and returned
+  by `/api/doctors`. **Bump it and record the change here whenever weights or maths
+  move.**
+- `ranking.test.ts` freezes exact expected scores for three scenarios. A weights
+  change now produces a visible, reviewable diff instead of a silent re-baseline.
+- Tests also pin the promises themselves: unverified credentials are discounted 40%,
+  distance can never outweigh quality, components stay within their published
+  weights, ties break deterministically, and injecting a `sponsored`/`boost` field
+  does not move the number.
+- `/api/doctors` returns `as_of_year`, threaded to the cards so the displayed
+  "12 yrs" is computed from the same year as the score beside it.
+
+### 3. Emergency detection — three real defects fixed
+
+This is the one code path where a miss can cost a life.
+
+**Defect A — stroke was not detected.** *Found by a test written during this pass.*
+"her face is drooping and speech is slurred" is a textbook stroke and matched
+neither `"face drooping"` nor `"slurred speech"`, because matching required
+contiguous word order. Fixed with a second, order-insensitive tier
+(`MEDICAL_WORD_SETS`) where every word of a curated set must appear somewhere in the
+text — `["face","drooping"]`, `["speech","slurred"]`, `["chest","pain"]`, and so on.
+
+Restricted to unambiguous clinical content words on purpose: applied to a set
+containing a common function word it would be far too loose (`["not","waking"]`
+would fire on "not sleeping well, waking up tired").
+
+**Defect B — false emergencies from substring matching.** `"fits"` matched
+**"benefits"**, "outfits", "profits". All three are now regression tests.
+
+**Defect C — Malayalam did not work.** The home screen promises *"Malayalam &
+English both work"*; the matcher was English-only. Added Malayalam script and
+romanised Malayalam ("Manglish") terms to both the red-flag list and the routing
+taxonomy — Manglish because it is how a large share of Kerala actually types.
+
+**Also:** mental-health crises are now a separate category routing to Tele-MANAS
+(14416) rather than 108. An ambulance is not what someone in crisis needs offered
+first.
+
+### 4. Routing misroutes fixed
+
+The same substring bug affected `KEYWORD_MAP`, and these were live:
+
+| Text | Matched | Wrongly routed to |
+|---|---|---|
+| "my **heart** beats fast" | `ear` | ENT |
+| "pain near my **kid**ney" | `kid` | Pediatrics |
+
+Matching now runs through `packages/core/src/text.ts`, which is script-aware:
+**Latin → whole word** (substring matching caused the bugs above); **Malayalam →
+substring** (the language is agglutinative — `പനി`/"fever" is a genuine prefix of
+`പനിയുണ്ട്`/"[I] have a fever", and a whole-word test would miss the most natural
+phrasing).
+
+### 5. Boundaries validated, data-leak closed
+
+- Zod schemas at every untrusted boundary: query strings, JSON bodies, model output,
+  and **database rows**. A `Doctor` interface asserts nothing at runtime about what
+  `SELECT *` returned.
+- `SELECT *` replaced with an explicit column list. It was shipping the PostGIS
+  `geom` blob and every future internal column straight to the browser. Adding a
+  column is now a deliberate decision to publish it.
+- Radius is *clamped*, not rejected — a user dragging a slider should never be able
+  to produce an error.
+
+### 6. LLM routing rewritten
+
+`routing.ts` used a raw `fetch` with a bare `JSON.parse`, no timeout, and no rate
+limit.
+
+- Official `@anthropic-ai/sdk`, schema-enforced output via `output_config.format`,
+  then validated again with zod. The model is untrusted input; unknown specialty
+  slugs are dropped without failing the whole parse.
+- **6-second timeout** (the SDK default is ten minutes — indistinguishable from the
+  site being broken, for someone unwell on a phone).
+- **Rate limited**, 20/min per caller. The endpoint spends money on every call and
+  shipped unmetered.
+- Model kept at Haiku (`claude-haiku-4-5`, alias rather than a dated snapshot). This
+  is a short classification over seven departments — the cheap, fast tier is
+  correct, and it was the project's existing choice.
+- **No prompt caching, deliberately.** Haiku 4.5's minimum cacheable prefix is 4096
+  tokens; this system prompt is a fraction of that, so a `cache_control` breakpoint
+  would pay the write premium and never be read. Revisit if the prompt grows.
+- The emergency check runs *before* the model and is never delegated to it. If the
+  model flags an emergency our local check missed, the user still gets the vetted
+  message and helplines — never model-authored crisis copy.
+
+### 7. Privacy (DPDP Act 2023)
+
+Symptom free-text is sensitive personal data. It is now never logged — not on the
+success path, not in any error branch — never persisted, and never placed in a URL.
+`/api/route-symptom` responds `cache-control: no-store`. The rate limiter keys on a
+coarse caller identity that is never stored alongside the complaint.
+
+### 8. Framework unification (required, not cosmetic)
+
+Web was React 18.3 / Next 14 / TS 5.5; mobile was React 19.2 / RN 0.86 / TS 6.0.
+Hoisting two React type trees into one workspace broke the build outright
+(`'ChevronLeft' cannot be used as a JSX component`). Web moved to **Next 15.5 +
+React 19.2.3**, matching mobile exactly.
+
+Carried changes: `params`/`searchParams` are now Promises (Next 15); react-leaflet
+4 → 5 (v4 peers on React 18); `outputFileTracingRoot` pinned, because Next was
+walking up and selecting a stray lockfile in the home directory.
+
+Also fixed a latent bug in the mobile manifest: `react` was pinned exact at 19.2.3
+while `react-dom` used a caret, resolving to 19.2.8, whose peer demands
+react ^19.2.8.
+
+### 9. Provenance and audit trail
+
+`nmc_verified` was a bare boolean driving 30% of a public score attached to a named,
+real person — with no way to answer *who checked this, against what, and when*. That
+is both the audit trail a defamation claim would demand and what makes the score
+honest rather than merely confident.
+
+Added `credential_provenance` (append-only by convention: correct a bad check by
+inserting a newer row) and `score_history` (per-doctor score with the
+`score_version` that produced it). The seed writes honest `sample-data` provenance
+saying nobody verified anything.
+
+### 10. CI, and enforcing the promise mechanically
+
+`npm run verify` = integrity → typecheck → lint → test. GitHub Actions runs it plus
+the web build on every push and PR.
+
+`scripts/check-no-paid-ranking.mjs` fails the build if an identifier like
+`sponsored`, `paid_placement`, `boost_score`, or `bid_amount` appears anywhere in
+`apps/` or `packages/`. "Ranking is never for sale" was previously protected by a
+comment and whoever reviewed the PR; it is now a build failure. Verified to exit 1
+on a planted violation.
+
+### Verification at time of writing
+
+- `npm run check:integrity` — passes (12 patterns, 0 violations)
+- `npm run typecheck` — 4/4 workspaces clean
+- `npm test` — **109 passing**
+- `npm run build` — web builds clean on Next 15.5
+
+### Notes for whoever is next
+
+- Dev servers were stopped to allow the directory restructure — restart with
+  `npm run dev` (web) and `npm run mobile` (Expo).
+- **All seeded doctors remain fictional.** Nothing here is ready to rank a real
+  person. See the pre-launch checklist in `README.md`.
+- The rate limiter is in-process: per-instance, resets on deploy, useless against a
+  distributed caller. Move to Redis before running more than one instance.
+- Not done in this pass: the ~69 inline `style={{}}` blocks that bypass the design
+  system in `apps/web/src/styles/ds/`, and native review/profile-claiming (v1.5).

@@ -1,0 +1,94 @@
+/* ───────────────────────────────────────────────────────────
+   Shakir — Color
+   Warm neutral base (~90% of any surface) + ONE dominant accent
+   (Flare) + an OPTIONAL secondary (Pine). Never pure #000 / #fff.
+   Accent appears only in the headline moment, primary action,
+   and key data — nowhere else.
+   ─────────────────────────────────────────────────────────── */
+
+:root {
+  /* Warm neutral ramp ------------------------------------------------ */
+  --neutral-0:   #FAFAF8;
+  --neutral-50:  #F3F2ED;
+  --neutral-100: #E8E6DF;
+  --neutral-200: #D6D3C9;
+  --neutral-300: #B9B5AA;
+  --neutral-400: #938F84;
+  --neutral-500: #6E6A60;
+  --neutral-600: #4E4B43;
+  --neutral-700: #343230;
+  --neutral-800: #201F1F;
+  --neutral-900: #161618;
+  --neutral-950: #0E0E10;
+
+  /* Flare — primary accent (warm coral) ------------------------------ */
+  --flare-50:  #FFF1ED;
+  --flare-100: #FFE0D6;
+  --flare-200: #FFC2AE;
+  --flare-300: #FF9C7D;
+  --flare-400: #FB7350;
+  --flare-500: #F94E29;   /* base */
+  --flare-600: #DE3B18;
+  --flare-700: #B82E12;
+  --flare-800: #8F2410;
+  --flare-900: #6E1F11;
+
+  /* Pine — secondary accent (deep green, sparing) -------------------- */
+  --pine-50:  #ECFBF3;
+  --pine-100: #CFF3E0;
+  --pine-200: #9FE6C2;
+  --pine-300: #5FD09C;
+  --pine-400: #25A877;
+  --pine-500: #137A52;   /* base */
+  --pine-600: #0E6344;
+  --pine-700: #0B4E36;
+  --pine-800: #093E2B;
+  --pine-900: #073122;
+
+  /* Brand accent aliases — re-skin a project by repointing these ----- */
+  --accent:          var(--flare-500);
+  --accent-hover:    var(--flare-600);
+  --accent-press:    var(--flare-700);
+  --accent-text:     var(--flare-700);   /* accent TEXT on light bg */
+  --accent-2:        var(--pine-500);
+  --accent-2-text:   var(--pine-700);
+
+  /* Semantic / utility (separate from brand) ------------------------- */
+  --success: #1E9E63;
+  --warning: #D98A0B;
+  --danger:  #D92D20;
+  --info:    #2D6BE0;
+
+  /* ── Light theme (default): editorial / docs / slides ───────────── */
+  --bg:               #FAFAF8;
+  --surface:          #FFFFFF;
+  --surface-2:        #F3F2ED;
+  --text:             #161618;
+  --text-muted:       #4E4B43;
+  --text-faint:       #938F84;
+  --border:           #D6D3C9;
+  --border-strong:    #B9B5AA;
+  --accent-contrast:  #FFFFFF;   /* text/icon on an accent fill */
+  --focus-ring:       var(--flare-500);
+}
+
+/* ── Dark theme: the default for app UI / dashboards ───────────────── */
+[data-theme="dark"] {
+  --bg:               #0E0E10;
+  --surface:          #161618;
+  --surface-2:        #201F1F;
+  --text:             #FAFAF8;
+  --text-muted:       #B9B5AA;
+  --text-faint:       #6E6A60;
+  --border:           rgba(255, 255, 255, 0.10);
+  --border-strong:    rgba(255, 255, 255, 0.18);
+  --accent-contrast:  #1A0A04;
+
+  /* On dark, accent text can ride brighter steps */
+  --accent-text:      var(--flare-300);
+  --accent-2-text:    var(--pine-300);
+  --success: #34C77B;
+  --warning: #E9A52A;
+  --danger:  #F0584A;
+  --info:    #5A8CF0;
+}
