@@ -7,12 +7,15 @@ import pg from "pg";
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const { doctors } = JSON.parse(readFileSync(join(root, "db", "sample-doctors.json"), "utf8"));
 
+// Keep in sync with SPECIALTIES in src/lib/taxonomy.ts.
 const specialties = [
   ["dermatology", "Dermatology", "Skin, hair, and nail problems"],
-  ["orthopedics", "Orthopedics", "Bones, joints, muscles, and back problems"],
-  ["ent", "ENT", "Ear, nose, throat, and sinus problems"],
-  ["dental", "Dental", "Teeth and gum problems"],
+  ["cardiology", "Cardiology", "Heart and circulation problems"],
   ["general", "General Physician", "Fever, infections, and everyday illness"],
+  ["dental", "Dental", "Teeth and gum problems"],
+  ["ent", "ENT", "Ear, nose, throat, and sinus problems"],
+  ["pediatrics", "Pediatrics", "Illness and growth in children"],
+  ["orthopedics", "Orthopedics", "Bones, joints, muscles, and back problems"],
 ];
 
 const client = new pg.Client({ connectionString: process.env.DATABASE_URL });

@@ -1,9 +1,11 @@
 export type SpecialtySlug =
   | "dermatology"
-  | "orthopedics"
-  | "ent"
+  | "cardiology"
+  | "general"
   | "dental"
-  | "general";
+  | "ent"
+  | "pediatrics"
+  | "orthopedics";
 
 export interface Doctor {
   id: number;

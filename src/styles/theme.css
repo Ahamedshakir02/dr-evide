@@ -1,0 +1,50 @@
+/* ───────────────────────────────────────────────────────────
+   Dr Evide — project re-skin of the Shakir Design System.
+
+   Everything here overrides src/styles/ds/* so the design system
+   itself stays byte-identical to the handoff bundle and can be
+   re-synced. Values are lifted verbatim from the mock's wrapper
+   div (dr-evide-doctor-discovery/project/Dr Evide.dc.html:28).
+
+   Deviations from the design system, stated per its own rule:
+   1. Accent re-skinned from Flare coral to teal #0f766e. Coral
+      reads as an alert in a medical context; teal does not.
+   2. Light theme only. The DS calls dark the default for app UI,
+      but both mock files are built on the light surfaces.
+   3. Noto Sans Malayalam appended to the font stacks — General
+      Sans and Clash Display carry no Malayalam glyphs, and the
+      product name renders as "ഡോക്ടർ എവിടെ?".
+   ─────────────────────────────────────────────────────────── */
+
+/* The Malayalam webfont is imported at the top of app/globals.css, not here:
+   this file is bundled after the design system's rules, and an @import that
+   follows a style rule is dropped by the browser. */
+
+:root {
+  /* ── Teal re-skin ─────────────────────────────────────────── */
+  --accent:          #0f766e;
+  --accent-hover:    #0c5d57;
+  --accent-press:    #0a4a45;
+  --accent-text:     #0f766e;
+  --accent-contrast: #ffffff;
+  --accent-2:        #137A52;
+  --accent-2-text:   #0B4E36;
+
+  /* Flare ramp steps the components still reference, re-pointed
+     so .sh-badge--accent and the icon tiles pick up teal. */
+  --flare-50:  #effcf8;
+  --flare-100: #d7f5ec;
+  --flare-200: #a6e6da;
+  --flare-700: #0f766e;
+
+  --focus-ring-color: #0f766e;
+  --focus-ring: 0 0 0 3px rgba(15, 118, 110, 0.35);
+
+  /* ── Malayalam-capable font stacks ────────────────────────── */
+  --font-display: "Clash Display", "Noto Sans Malayalam", "General Sans", sans-serif;
+  --font-body: "General Sans", "Noto Sans Malayalam", ui-sans-serif, system-ui, sans-serif;
+
+  /* ── App-specific ─────────────────────────────────────────── */
+  --emergency: #B4231A;
+  --topbar-h: 68px;
+}

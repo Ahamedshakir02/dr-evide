@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ArrowRight, CircleCheck, Pencil, ShieldCheck } from "lucide-react";
 import { SPECIALTIES } from "@/lib/taxonomy";
+import { SCORE_WEIGHTS } from "@/lib/ranking";
+import { SpecialtyTile } from "@/components/SpecialtyTile";
 import type { RoutingResult } from "@/lib/types";
 
 export default function Home() {
@@ -29,8 +32,18 @@ export default function Home() {
         return;
       }
       const result = data as RoutingResult;
+
+      if (result.emergency) {
+        // Only the matched red-flag keyword travels in the URL — never the
+        // typed symptom text, which is sensitive personal data under the
+        // DPDP Act 2023.
+        const flag = result.matched_conditions[0] ?? "";
+        router.push(`/emergency?flag=${encodeURIComponent(flag)}`);
+        return;
+      }
+
       setRouting(result);
-      if (!result.emergency && result.specialties.length === 1) {
+      if (result.specialties.length === 1) {
         goToResults(result.specialties[0].slug, result.matched_conditions);
       }
     } catch {
@@ -48,58 +61,162 @@ export default function Home() {
 
   return (
     <>
-      <h1>What&apos;s troubling you?</h1>
-      <p className="subtitle">
-        Describe it in your own words — we&apos;ll find the right type of doctor near you.
-      </p>
+      <div className="hero-grid">
+        {/* ── Ask ───────────────────────────────────────────────── */}
+        <div>
+          <div className="sh-eyebrow" style={{ marginBottom: 14 }}>
+            Describe it in your own words
+          </div>
+          <h1 className="hero-title">
+            Find the right doctor — not the one who <em>paid the most.</em>
+          </h1>
+          <p className="hero-sub">
+            Tell us what&apos;s bothering you. We route you to the right department, then rank
+            nearby doctors by a transparent TrustScore built from verified credentials and real
+            reviews.
+          </p>
 
-      <form className="symptom-form" onSubmit={handleRoute}>
-        <textarea
-          className="symptom-input"
-          placeholder='e.g. "my hair is falling a lot from the front" or "knee pain when climbing stairs"'
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          maxLength={500}
-        />
-        <button className="btn" disabled={loading || text.trim().length < 3}>
-          {loading ? "Thinking…" : "Find my doctor"}
-        </button>
-        {error && <p className="error-text">{error}</p>}
-      </form>
+          <form onSubmit={handleRoute}>
+            <textarea
+              className="sh-textarea"
+              rows={3}
+              style={{ fontSize: 17, lineHeight: 1.5, padding: 16, borderRadius: 16 }}
+              placeholder="e.g. My hair is falling a lot lately…"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              maxLength={500}
+              aria-label="Describe your symptoms"
+            />
 
-      {routing?.emergency && (
-        <div className="routing-box emergency">{routing.emergency_message}</div>
-      )}
+            <div className="hint-row" style={{ margin: "10px 2px 16px" }}>
+              <Pencil size={15} aria-hidden="true" />
+              <span>Malayalam &amp; English both work</span>
+            </div>
 
-      {routing && !routing.emergency && routing.specialties.length > 1 && (
-        <div className="routing-box">
-          <p style={{ marginTop: 0 }}>This could be one of these — pick the closest fit:</p>
-          {routing.specialties.map((s) => (
-            <p key={s.slug}>
-              <button
-                className="btn btn-secondary"
-                onClick={() => goToResults(s.slug, routing.matched_conditions)}
-              >
-                {SPECIALTIES[s.slug].name}
-              </button>
-              <br />
-              <small>{s.reason}</small>
-            </p>
-          ))}
+            <button
+              className="sh-btn sh-btn--primary sh-btn--lg sh-btn--block"
+              style={{ height: 58, fontSize: 18, borderRadius: 16 }}
+              disabled={loading || text.trim().length < 3}
+            >
+              {loading ? "Finding…" : "Find the right doctor"}
+              {!loading && <ArrowRight size={20} aria-hidden="true" />}
+            </button>
+
+            {error && (
+              <p className="error-text" role="alert" style={{ marginTop: 10 }}>
+                {error}
+              </p>
+            )}
+          </form>
+
+          {/* Ambiguous routing — let the person choose. */}
+          {routing && routing.specialties.length > 1 && (
+            <div className="sh-card" style={{ marginTop: 20, padding: 20 }}>
+              <div className="sh-eyebrow" style={{ marginBottom: 12 }}>
+                This could be one of two departments
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                {routing.specialties.map((s) => (
+                  <div key={s.slug}>
+                    <button
+                      className="sh-btn sh-btn--secondary"
+                      onClick={() => goToResults(s.slug, routing.matched_conditions)}
+                    >
+                      {SPECIALTIES[s.slug].name}
+                    </button>
+                    <p
+                      style={{
+                        margin: "6px 0 0",
+                        fontSize: 13,
+                        color: "var(--text-muted)",
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {s.reason}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-      )}
 
-      <p className="divider">— or pick a department yourself —</p>
+        {/* ── How TrustScore works (desktop) ────────────────────── */}
+        <div className="sh-card only-desktop" style={{ padding: 26 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
+            <span
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 999,
+                background: "color-mix(in srgb, var(--accent-2) 14%, transparent)",
+                color: "var(--accent-2)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flex: "none",
+              }}
+            >
+              <ShieldCheck size={20} aria-hidden="true" />
+            </span>
+            <span
+              style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 19 }}
+            >
+              How TrustScore works
+            </span>
+          </div>
+          <p
+            style={{
+              fontSize: 14,
+              color: "var(--text-muted)",
+              margin: "0 0 18px",
+              lineHeight: 1.55,
+            }}
+          >
+            A 0–100 score built from five signals we can actually verify — and nothing else.
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {SCORE_WEIGHTS.map(({ key, label, max }) => (
+              <div key={key} className="weight-row">
+                <span className="weight-row__pct sh-mono">{max}%</span>
+                <span>{label}</span>
+              </div>
+            ))}
+          </div>
+          <div
+            className="pledge"
+            style={{ marginTop: 18, paddingTop: 16, borderTop: "1px solid var(--border)" }}
+          >
+            <CircleCheck size={15} aria-hidden="true" />
+            No paid placement. Ever.
+          </div>
+        </div>
+      </div>
+
+      {/* ── Departments ─────────────────────────────────────────── */}
+      <div className="rule-row" style={{ margin: "40px 0 18px" }}>
+        <span className="sh-eyebrow" style={{ whiteSpace: "nowrap" }}>
+          Or pick a department
+        </span>
+      </div>
 
       <div className="specialty-grid">
-        {(Object.entries(SPECIALTIES) as [string, { name: string; description: string }][]).map(
-          ([slug, s]) => (
-            <a key={slug} className="specialty-card" href={`/results?specialty=${slug}`}>
-              <strong>{s.name}</strong>
-              <small>{s.description}</small>
-            </a>
-          )
-        )}
+        {Object.entries(SPECIALTIES).map(([slug, info]) => (
+          <SpecialtyTile key={slug} slug={slug} info={info} />
+        ))}
+      </div>
+
+      {/* ── Integrity note (mobile carries this; desktop has the card) ── */}
+      <div className="trust-panel only-mobile" style={{ marginTop: 24 }}>
+        <ShieldCheck
+          size={22}
+          style={{ color: "var(--accent-2)", flex: "none", marginTop: 1 }}
+          aria-hidden="true"
+        />
+        <div>
+          Doctors are ranked only by verified credentials and real reviews.{" "}
+          <strong>No one can pay to rank higher.</strong>
+        </div>
       </div>
     </>
   );

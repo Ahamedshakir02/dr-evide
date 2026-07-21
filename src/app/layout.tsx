@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { MapPin } from "lucide-react";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -15,20 +16,42 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        {/* Malayalam glyphs for "ഡോക്ടർ എവിടെ?" — neither Clash Display nor
+            General Sans carries them. Loaded here rather than via @import,
+            which webpack emits too late in the bundle to be honoured. */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Noto+Sans+Malayalam:wght@400;500;600;700&display=swap"
+        />
+      </head>
       <body>
-        <header className="site-header">
-          <a href="/" className="logo">
-            Dr <span>Evide</span>
-          </a>
-          <span className="tagline">ഡോക്ടർ എവിടെ?</span>
+        {/* Top bar — Dr Evide Web.dc.html:35-51 */}
+        <header className="topbar">
+          <div className="topbar__inner">
+            <a href="/" className="wordmark">
+              Dr Evide
+              <span className="wordmark__ml" lang="ml">
+                ഡോക്ടർ എവിടെ?
+              </span>
+            </a>
+            <span className="sh-tag" style={{ height: 38, marginLeft: "auto" }}>
+              <MapPin size={16} aria-hidden="true" />
+              Edappal, Kerala
+            </span>
+          </div>
         </header>
-        <main>{children}</main>
+
+        <main className="shell">{children}</main>
+
         <footer className="site-footer">
           <p>
             Dr Evide helps you find a suitable doctor. It does not provide medical advice or
-            diagnosis. In an emergency, call 108.
+            diagnosis. In an emergency, call <a href="tel:108">108</a>.
           </p>
-          <p className="muted">Rankings are never paid for. <a href="/">How ranking works</a></p>
+          <p>Rankings are never paid for. No one can pay to rank higher.</p>
         </footer>
       </body>
     </html>

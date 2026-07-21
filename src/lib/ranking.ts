@@ -15,24 +15,42 @@ export function rankDoctors(
   matchedConditions: string[],
   radiusKm: number
 ): RankedDoctor[] {
-  const currentYear = new Date().getFullYear();
-
-  const ranked = doctors.map((d) => {
-    const breakdown = scoreDoctor(d, matchedConditions, radiusKm, currentYear);
-    const trust_score = Math.round(
-      breakdown.qualification +
-        breakdown.experience +
-        breakdown.reviews +
-        breakdown.condition_relevance +
-        breakdown.accessibility
-    );
-    return { ...d, trust_score, score_breakdown: breakdown };
-  });
+  const ranked = doctors.map((d) => ({ ...d, ...scoreOne(d, matchedConditions, radiusKm) }));
 
   // Sort by score desc; distance as tiebreaker
   ranked.sort((a, b) => b.trust_score - a.trust_score || a.distance_km - b.distance_km);
   return ranked;
 }
+
+/**
+ * Score a single doctor. Used by the profile page, which fetches one doctor
+ * directly and has no ranked list to read from — it must reproduce exactly the
+ * number shown on the results card, so both go through this one function.
+ */
+export function scoreOne(
+  d: Doctor & { distance_km: number },
+  matchedConditions: string[],
+  radiusKm: number
+): { trust_score: number; score_breakdown: ScoreBreakdown } {
+  const breakdown = scoreDoctor(d, matchedConditions, radiusKm, new Date().getFullYear());
+  const trust_score = Math.round(
+    breakdown.qualification +
+      breakdown.experience +
+      breakdown.reviews +
+      breakdown.condition_relevance +
+      breakdown.accessibility
+  );
+  return { trust_score, score_breakdown: breakdown };
+}
+
+/** The weights behind TrustScore, for the UI that explains them. */
+export const SCORE_WEIGHTS = [
+  { key: "qualification", label: "Verified credentials", max: 30 },
+  { key: "reviews", label: "Authentic reviews", max: 25 },
+  { key: "condition_relevance", label: "Condition relevance", max: 20 },
+  { key: "experience", label: "Years of experience", max: 15 },
+  { key: "accessibility", label: "Accessibility", max: 10 },
+] as const satisfies readonly { key: keyof ScoreBreakdown; label: string; max: number }[];
 
 function scoreDoctor(
   d: Doctor & { distance_km: number },

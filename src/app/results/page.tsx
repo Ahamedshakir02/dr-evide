@@ -1,8 +1,24 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ChevronLeft } from "lucide-react";
+import { DoctorCard } from "@/components/DoctorCard";
+import {
+  RADIUS_DEFAULT,
+  RADIUS_MAX,
+  RadiusControl,
+} from "@/components/RadiusControl";
+import { RankedIcon } from "@/components/icons/SpecialtyIcons";
+import { useMediaQuery } from "@/lib/hooks";
 import type { RankedDoctor } from "@/lib/types";
+
+/* Leaflet touches window at import time, so it can never render on the server. */
+const ResultsMap = dynamic(() => import("@/components/ResultsMap"), {
+  ssr: false,
+  loading: () => <div className="map-panel" />,
+});
 
 interface SearchResponse {
   specialty: { slug: string; name: string; description: string };
@@ -12,102 +28,190 @@ interface SearchResponse {
   error?: string;
 }
 
+/** Edappal town centre — mirrors DEFAULT_LOCATION in src/lib/db.ts. */
+const FALLBACK_CENTER = { lat: 10.9855, lng: 76.0105 };
+
 function ResultsInner() {
+  const router = useRouter();
   const sp = useSearchParams();
   const specialty = sp.get("specialty") ?? "general";
   const conditions = sp.get("conditions") ?? "";
 
-  const [radius, setRadius] = useState(15);
+  const [radius, setRadius] = useState(RADIUS_DEFAULT);
   const [data, setData] = useState<SearchResponse | null>(null);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const isDesktop = useMediaQuery("(min-width: 900px)");
 
   useEffect(() => {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => {} // denied → server falls back to Edappal centre
+      () => {}, // denied or timed out → server falls back to the Edappal centre
+      // Without a timeout this can hang indefinitely on a device with no fix,
+      // leaving the list silently pinned to the fallback centre.
+      { timeout: 8000, maximumAge: 300_000 }
     );
   }, []);
 
-  const load = useCallback(async () => {
+  useEffect(() => {
+    // Radius drags and the geolocation callback both retrigger this, so
+    // responses can land out of order. Ignore anything but the latest.
+    let current = true;
     setLoading(true);
+
     const params = new URLSearchParams({ specialty, radius: String(radius) });
     if (conditions) params.set("conditions", conditions);
     if (coords) {
       params.set("lat", String(coords.lat));
       params.set("lng", String(coords.lng));
     }
-    try {
-      const res = await fetch(`/api/doctors?${params.toString()}`);
-      setData(await res.json());
-    } finally {
-      setLoading(false);
-    }
+
+    (async () => {
+      try {
+        const res = await fetch(`/api/doctors?${params.toString()}`);
+        const json = await res.json();
+        if (current) setData(json);
+      } finally {
+        if (current) setLoading(false);
+      }
+    })();
+
+    return () => {
+      current = false;
+    };
   }, [specialty, radius, conditions, coords]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  const center = coords ?? FALLBACK_CENTER;
+  const doctors = data?.doctors ?? [];
+  const specialtyName = data?.specialty?.name ?? "Doctors";
+
+  /** Carries the search context so the profile reproduces the same TrustScore. */
+  function profileHref(id: number) {
+    const params = new URLSearchParams({ specialty, radius: String(radius) });
+    if (conditions) params.set("conditions", conditions);
+    params.set("lat", String(center.lat));
+    params.set("lng", String(center.lng));
+    return `/doctor/${id}?${params.toString()}`;
+  }
+
+  const pledge = (
+    <div className="pledge">
+      <RankedIcon />
+      Ranked by TrustScore — not by ads
+    </div>
+  );
 
   return (
     <>
-      <a className="back-link" href="/">← Search again</a>
-      <h1>{data?.specialty?.name ?? "Doctors"}</h1>
-      <p className="subtitle">
-        Ranked by verified credentials, experience, and authentic reviews — never by payment.
-      </p>
+      {/* ── Mobile: sticky header ─────────────────────────────── */}
+      <div className="results-head-mobile only-mobile">
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 12 }}>
+          <button
+            className="sh-iconbtn sh-iconbtn--solid"
+            style={{ flex: "none" }}
+            onClick={() => router.push("/")}
+            aria-label="Back to search"
+          >
+            <ChevronLeft size={20} aria-hidden="true" />
+          </button>
+          <div>
+            <div
+              style={{
+                fontFamily: "var(--font-display)",
+                fontWeight: 600,
+                fontSize: 20,
+                letterSpacing: "-0.02em",
+                lineHeight: 1.1,
+              }}
+            >
+              {specialtyName}
+            </div>
+            {conditions && (
+              <div style={{ fontSize: 13, color: "var(--text-faint)" }}>
+                matched to &ldquo;{conditions.split(",").join(", ")}&rdquo;
+              </div>
+            )}
+          </div>
+        </div>
 
-      <div className="radius-row">
-        <span>Within</span>
-        <input
-          type="range"
-          min={2}
-          max={50}
-          step={1}
-          value={radius}
-          onChange={(e) => setRadius(Number(e.target.value))}
+        <RadiusControl
+          radius={radius}
+          count={doctors.length}
+          onChange={setRadius}
+          variant="card"
         />
-        <b>{radius} km</b>
+
+        <div style={{ marginTop: 12 }}>{pledge}</div>
       </div>
 
-      {loading && <p className="empty-state">Finding doctors…</p>}
-
-      {!loading && data?.doctors?.length === 0 && (
-        <p className="empty-state">
-          No {data.specialty.name} doctors found within {radius} km. Try widening the radius.
-        </p>
-      )}
-
-      {!loading &&
-        data?.doctors?.map((d, i) => (
-          <a key={d.id} className="doctor-card" href={`/doctor/${d.id}`}>
-            <div className="row1">
-              <div>
-                <h3>
-                  #{i + 1} {d.full_name}
-                </h3>
-                <p className="quals">{d.qualifications.join(", ")}</p>
-                <p style={{ margin: "0 0 6px" }}>
-                  {d.nmc_verified ? (
-                    <span className="badge verified">NMC verified</span>
-                  ) : (
-                    <span className="badge unverified">Not yet verified</span>
-                  )}
-                  {d.is_sample && <span className="badge sample">Sample data</span>}
-                </p>
-                <p className="meta">
-                  {d.clinic_name} · {d.town} · <b>{d.distance_km.toFixed(1)} km</b>
-                  {d.fee_inr ? <> · ₹{d.fee_inr}</> : null}
-                </p>
+      {/* ── Desktop: page header ──────────────────────────────── */}
+      <div className="only-desktop">
+        <button className="link-back" onClick={() => router.push("/")}>
+          <ChevronLeft size={16} aria-hidden="true" /> Back to search
+        </button>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "space-between",
+            gap: 24,
+            margin: "16px 0 22px",
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            {conditions && (
+              <div className="sh-eyebrow" style={{ marginBottom: 8 }}>
+                Matched to &ldquo;{conditions.split(",").join(", ")}&rdquo;
               </div>
-              <div className="score-badge">
-                {d.trust_score}
-                <small>TrustScore</small>
-              </div>
-            </div>
-          </a>
-        ))}
+            )}
+            <h1
+              style={{
+                fontFamily: "var(--font-display)",
+                fontWeight: 600,
+                fontSize: 34,
+                letterSpacing: "-0.02em",
+                margin: 0,
+              }}
+            >
+              {specialtyName} near you
+            </h1>
+          </div>
+          {pledge}
+        </div>
+
+        <div style={{ marginBottom: 20 }}>
+          <RadiusControl
+            radius={radius}
+            count={doctors.length}
+            onChange={setRadius}
+            variant="toolbar"
+          />
+        </div>
+      </div>
+
+      {/* ── Results ───────────────────────────────────────────── */}
+      <div className="results-split" style={{ marginTop: 16 }}>
+        <div className="results-list stagger">
+          {loading && <p className="empty-state">Finding doctors…</p>}
+
+          {!loading && doctors.length === 0 && (
+            <p className="empty-state">
+              No {specialtyName} doctors within {radius} km.
+              {radius < RADIUS_MAX && " Try widening the radius."}
+            </p>
+          )}
+
+          {!loading &&
+            doctors.map((d) => (
+              <DoctorCard key={d.id} doctor={d} href={profileHref(d.id)} />
+            ))}
+        </div>
+
+        {isDesktop && doctors.length > 0 && <ResultsMap doctors={doctors} center={center} />}
+      </div>
     </>
   );
 }
