@@ -31,11 +31,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Top bar — Dr Evide Web.dc.html:35-51 */}
         <header className="topbar">
           <div className="topbar__inner">
+            {/* Wordmark only. The Malayalam lockup "ഡോക്ടർ എവിടെ?" belongs to
+                the app's top bar (Dr Evide.dc.html:56) — the web design carries
+                the wordmark alone. The Malayalam webfont below still loads,
+                because people type Malayalam into the symptom box. */}
             <a href="/" className="wordmark">
               Dr Evide
-              <span className="wordmark__ml" lang="ml">
-                ഡോക്ടർ എവിടെ?
-              </span>
             </a>
             <span className="sh-tag" style={{ height: 38, marginLeft: "auto" }}>
               <MapPin size={16} aria-hidden="true" />

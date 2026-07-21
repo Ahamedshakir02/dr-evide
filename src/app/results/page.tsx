@@ -105,49 +105,10 @@ function ResultsInner() {
 
   return (
     <>
-      {/* ── Mobile: sticky header ─────────────────────────────── */}
-      <div className="results-head-mobile only-mobile">
-        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 12 }}>
-          <button
-            className="sh-iconbtn sh-iconbtn--solid"
-            style={{ flex: "none" }}
-            onClick={() => router.push("/")}
-            aria-label="Back to search"
-          >
-            <ChevronLeft size={20} aria-hidden="true" />
-          </button>
-          <div>
-            <div
-              style={{
-                fontFamily: "var(--font-display)",
-                fontWeight: 600,
-                fontSize: 20,
-                letterSpacing: "-0.02em",
-                lineHeight: 1.1,
-              }}
-            >
-              {specialtyName}
-            </div>
-            {conditions && (
-              <div style={{ fontSize: 13, color: "var(--text-faint)" }}>
-                matched to &ldquo;{conditions.split(",").join(", ")}&rdquo;
-              </div>
-            )}
-          </div>
-        </div>
-
-        <RadiusControl
-          radius={radius}
-          count={doctors.length}
-          onChange={setRadius}
-          variant="card"
-        />
-
-        <div style={{ marginTop: 12 }}>{pledge}</div>
-      </div>
-
-      {/* ── Desktop: page header ──────────────────────────────── */}
-      <div className="only-desktop">
+      {/* ── Page header — Dr Evide Web.dc.html:136-158 ──────────────
+          One header at every width; it reflows rather than switching to the
+          app's sticky icon-button header (Dr Evide.dc.html:160-188). */}
+      <div>
         <button className="link-back" onClick={() => router.push("/")}>
           <ChevronLeft size={16} aria-hidden="true" /> Back to search
         </button>
@@ -167,28 +128,13 @@ function ResultsInner() {
                 Matched to &ldquo;{conditions.split(",").join(", ")}&rdquo;
               </div>
             )}
-            <h1
-              style={{
-                fontFamily: "var(--font-display)",
-                fontWeight: 600,
-                fontSize: 34,
-                letterSpacing: "-0.02em",
-                margin: 0,
-              }}
-            >
-              {specialtyName} near you
-            </h1>
+            <h1 className="results-h1">{specialtyName} near you</h1>
           </div>
           {pledge}
         </div>
 
         <div style={{ marginBottom: 20 }}>
-          <RadiusControl
-            radius={radius}
-            count={doctors.length}
-            onChange={setRadius}
-            variant="toolbar"
-          />
+          <RadiusControl radius={radius} count={doctors.length} onChange={setRadius} />
         </div>
       </div>
 

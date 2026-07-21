@@ -12,8 +12,10 @@
    2. Light theme only. The DS calls dark the default for app UI,
       but both mock files are built on the light surfaces.
    3. Noto Sans Malayalam appended to the font stacks — General
-      Sans and Clash Display carry no Malayalam glyphs, and the
-      product name renders as "ഡോക്ടർ എവിടെ?".
+      Sans and Clash Display carry no Malayalam glyphs, and people
+      type Malayalam into the symptom box ("Malayalam & English
+      both work"). The Malayalam wordmark lockup itself belongs to
+      the app, not this design.
    ─────────────────────────────────────────────────────────── */
 
 /* The Malayalam webfont is imported at the top of app/globals.css, not here:

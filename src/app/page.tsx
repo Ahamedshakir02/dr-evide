@@ -141,8 +141,11 @@ export default function Home() {
           )}
         </div>
 
-        {/* ── How TrustScore works (desktop) ────────────────────── */}
-        <div className="sh-card only-desktop" style={{ padding: 26 }}>
+        {/* ── How TrustScore works ──────────────────────────────────
+            The website's integrity statement (Dr Evide Web.dc.html:78-96).
+            Shown at every width — the app states the same thing with its
+            trust footer panel, which stays in the app. */}
+        <div className="sh-card" style={{ padding: 26 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
             <span
               style={{
@@ -206,18 +209,6 @@ export default function Home() {
         ))}
       </div>
 
-      {/* ── Integrity note (mobile carries this; desktop has the card) ── */}
-      <div className="trust-panel only-mobile" style={{ marginTop: 24 }}>
-        <ShieldCheck
-          size={22}
-          style={{ color: "var(--accent-2)", flex: "none", marginTop: 1 }}
-          aria-hidden="true"
-        />
-        <div>
-          Doctors are ranked only by verified credentials and real reviews.{" "}
-          <strong>No one can pay to rank higher.</strong>
-        </div>
-      </div>
     </>
   );
 }

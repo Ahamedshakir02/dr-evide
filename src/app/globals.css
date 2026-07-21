@@ -29,15 +29,10 @@ a:hover { color: var(--accent-hover); }
 
 ::selection { background: var(--flare-200); color: var(--text); }
 
-/* ── Responsive helpers — 900px is the phone/desktop split ──────────────
-   These only ever set `none` or `revert`, never a concrete display value:
-   the element keeps whatever display its own class gives it (flex, grid…)
-   in the breakpoint where it is visible. */
-.only-desktop { display: none !important; }
-@media (min-width: 900px) {
-  .only-desktop { display: revert !important; }
-  .only-mobile { display: none !important; }
-}
+/* No show/hide-by-breakpoint helpers here on purpose. The website renders one
+   layout that reflows; it never swaps in the app's screens below 900px. The
+   app is a separate build in mobile/. The only breakpoint-conditional element
+   is the results map, gated in JS so Leaflet isn't mounted at zero width. */
 
 /* ═══ Shell ═════════════════════════════════════════════════════════ */
 
@@ -66,17 +61,8 @@ a:hover { color: var(--accent-hover); }
   line-height: 1.1;
 }
 .wordmark:hover { color: var(--text); }
-.wordmark__ml {
-  display: block;
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: var(--fw-semibold);
-  color: var(--accent-text);
-  margin-top: 1px;
-}
 @media (min-width: 900px) {
   .topbar__inner { padding: 0 32px; }
-  .wordmark__ml { display: inline; margin-left: 10px; font-size: 14px; }
 }
 
 .shell {
@@ -140,21 +126,6 @@ a:hover { color: var(--accent-hover); }
   background: var(--border);
 }
 .rule-row--end::before { display: none; }
-
-/* Integrity note — a structural panel, so it stays sharp (DS rule). */
-.trust-panel {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-panel);
-  padding: 14px 16px;
-  font-size: 14px;
-  color: var(--text-muted);
-  line-height: var(--leading-normal);
-}
-.trust-panel strong { color: var(--text); }
 
 .pledge {
   display: flex;
@@ -231,12 +202,13 @@ a:hover { color: var(--accent-hover); }
     gap: 16px;
   }
 }
+/* Web tile: icon + label, 20px padding, 14px gap (Web.dc.html:105). */
 .specialty-tile {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 12px;
-  padding: 16px;
+  gap: 14px;
+  padding: 20px;
   text-align: left;
   font-family: var(--font-body);
   color: var(--text);
@@ -256,21 +228,18 @@ a:hover { color: var(--accent-hover); }
 .specialty-tile__name {
   font-family: var(--font-display);
   font-weight: var(--fw-semibold);
-  font-size: 17px;
+  font-size: 16px;
   color: var(--text);
 }
-.specialty-tile__sub { font-size: 13px; color: var(--text-faint); }
 
 /* ═══ Results ═══════════════════════════════════════════════════════ */
 
-.results-head-mobile {
-  position: sticky;
-  top: var(--topbar-h);
-  z-index: 5;
-  background: var(--bg);
-  margin: -20px -20px 0;
-  padding: 12px 20px 16px;
-  border-bottom: 1px solid var(--border);
+.results-h1 {
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.125rem);
+  letter-spacing: var(--tracking-tight);
+  margin: 0;
 }
 
 .results-split { display: grid; gap: 24px; align-items: start; }
@@ -280,17 +249,28 @@ a:hover { color: var(--accent-hover); }
 
 .results-list { display: flex; flex-direction: column; gap: 14px; }
 
-.radius-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 12px 14px;
-}
+/* Inline toolbar, wrapping on narrow — the website's only radius treatment. */
 .radius-toolbar {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 16px;
+  flex-wrap: wrap;
   padding: 16px 20px;
+}
+.radius-toolbar__label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: var(--fw-semibold);
+  white-space: nowrap;
+}
+.radius-toolbar__slider { flex: 1 1 200px; min-width: 160px; }
+.radius-toolbar__count {
+  font-size: 14px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  margin-left: auto;
 }
 input[type="range"] {
   accent-color: var(--accent);
@@ -453,24 +433,6 @@ input[type="range"]:focus-visible { outline: none; box-shadow: var(--focus-ring)
   .profile-grid { grid-template-columns: 1.6fr 1fr; gap: 32px; }
 }
 
-.quickfacts { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-/* Structural panels stay sharp — never round a panel (DS rule). */
-.quickfact {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-panel);
-  padding: 12px;
-  text-align: center;
-}
-.quickfact__value {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  font-weight: var(--fw-bold);
-  font-size: 19px;
-  color: var(--text);
-}
-.quickfact__value span { font-size: 12px; color: var(--text-faint); }
-
 .score-row__head {
   display: flex;
   justify-content: space-between;
@@ -524,20 +486,10 @@ input[type="range"]:focus-visible { outline: none; box-shadow: var(--focus-ring)
 .cred-row--unverified .cred-row__title { color: var(--text-muted); }
 .cred-row--unverified .cred-row__note { color: var(--text-faint); }
 
-.action-bar {
-  position: sticky;
-  bottom: 0;
-  z-index: 10;
-  background: var(--bg);
-  border-top: 1px solid var(--border);
-  margin: 24px -20px 0;
-  padding: 14px 20px;
-  display: flex;
-  gap: 12px;
-}
-.action-bar .sh-btn { flex: 1; height: 54px; font-size: 16px; border-radius: 14px; }
+.action-card .sh-btn { height: 54px; font-size: 16px; border-radius: 14px; }
 
 @media (min-width: 900px) {
+  /* Sticky beside the content; below it on narrow, where the grid is 1 column. */
   .action-card { position: sticky; top: calc(var(--topbar-h) + 24px); }
 }
 

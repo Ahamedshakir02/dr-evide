@@ -73,7 +73,7 @@ export default async function DoctorPage({ params, searchParams }: Props) {
         rel="noopener noreferrer"
       >
         <Navigation size={20} aria-hidden="true" />
-        Directions
+        Get directions
       </a>
     </>
   );
@@ -104,9 +104,12 @@ export default async function DoctorPage({ params, searchParams }: Props) {
               >
                 {doctor.full_name}
               </h1>
-              <div style={{ fontSize: 15, color: "var(--text-muted)", marginBottom: 8 }}>
+              {/* "Dermatologist · MBBS, MD · 12 years" — Dr Evide Web.dc.html:275.
+                  Years live here on the website, not in a quick-facts panel. */}
+              <div style={{ fontSize: 16, color: "var(--text-muted)", marginBottom: 10 }}>
                 {specialty.name}
                 {doctor.qualifications.length > 0 && ` · ${doctor.qualifications.join(", ")}`}
+                {years !== null && ` · ${years} years`}
               </div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 <VerifiedPill verified={doctor.nmc_verified} regNo={doctor.nmc_reg_no} />
@@ -115,32 +118,9 @@ export default async function DoctorPage({ params, searchParams }: Props) {
             </div>
           </div>
 
-          {/* ── Quick facts — structural panels, kept sharp ──── */}
-          <div className="quickfacts" style={{ marginBottom: 18 }}>
-            <div className="quickfact">
-              <div className="quickfact__value">
-                {distance_km.toFixed(1)}
-                <span>km</span>
-              </div>
-              <div className="sh-eyebrow" style={{ fontSize: 10, marginTop: 3 }}>
-                {doctor.town ?? "Distance"}
-              </div>
-            </div>
-            <div className="quickfact">
-              <div className="quickfact__value">
-                {doctor.fee_inr !== null ? `₹${doctor.fee_inr}` : "—"}
-              </div>
-              <div className="sh-eyebrow" style={{ fontSize: 10, marginTop: 3 }}>
-                Consult
-              </div>
-            </div>
-            <div className="quickfact">
-              <div className="quickfact__value">{years ?? "—"}</div>
-              <div className="sh-eyebrow" style={{ fontSize: 10, marginTop: 3 }}>
-                Years
-              </div>
-            </div>
-          </div>
+          {/* The 3-up km / consult / years panels are the app's profile
+              treatment (Dr Evide.dc.html:313-326). On the website those facts
+              live in the action card to the right, as the web design has them. */}
 
           {/* ── Why this doctor ranks here ───────────────────── */}
           <div className="sh-card" style={{ padding: 20, marginBottom: 18 }}>
@@ -217,8 +197,11 @@ export default async function DoctorPage({ params, searchParams }: Props) {
           )}
         </div>
 
-        {/* ── Desktop action card ────────────────────────────── */}
-        <div className="action-card only-desktop">
+        {/* ── Action card — Dr Evide Web.dc.html:315-333 ──────────
+            Sticky beside the content on wide screens, reflowing underneath it
+            on narrow. The app's sticky bottom Directions/Call bar
+            (Dr Evide.dc.html:395-404) stays in the app. */}
+        <div className="action-card">
           <div className="sh-card" style={{ padding: 24 }}>
             <div
               style={{
@@ -251,9 +234,6 @@ export default async function DoctorPage({ params, searchParams }: Props) {
           </div>
         </div>
       </div>
-
-      {/* ── Mobile action bar ────────────────────────────────── */}
-      <div className="action-bar only-mobile">{actions}</div>
     </>
   );
 }
