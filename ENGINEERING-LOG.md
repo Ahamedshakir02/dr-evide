@@ -188,10 +188,38 @@ on a planted violation.
 
 ### Verification at time of writing
 
-- `npm run check:integrity` — passes (12 patterns, 0 violations)
+Static:
+
+- `npm run check:integrity` — passes (12 patterns, 0 violations); verified to exit 1 on a
+  planted violation, so the gate is real
 - `npm run typecheck` — 4/4 workspaces clean
+- `npm run lint` — clean
 - `npm test` — **109 passing**
 - `npm run build` — web builds clean on Next 15.5
+
+Runtime, against a live dev server (not just the build):
+
+| Check | Result |
+|---|---|
+| `/api/doctors?specialty=dermatology&conditions=hair fall` | ids 1, 3 at **88, 55** — identical to the golden tests |
+| Response envelope | `score_version: 1.0.0`, `as_of_year: 2026`, `sample_data: true` |
+| Column leak | no `geom` or `created_at` in the payload |
+| `specialty=astrology` | 400 |
+| `radius=9999` / `radius=abc` | clamped to 100 / defaulted to 15 |
+| `/api/doctors/abc` / `/api/doctors/9999` | 400 / 404 |
+| "my heart beats very fast" | cardiology only — **no ENT** (the `ear` misroute is gone) |
+| "pain near my kidney area" | general — **not Pediatrics** (the `kid` misroute is gone) |
+| "what are the benefits of this medicine" | general — **not an emergency** (the `fits` false positive is gone) |
+| "her face is drooping and speech is slurred" | medical emergency, 108 — **the stroke case now flags** |
+| "I have a lot of pain in my chest" | medical emergency, 108 (natural word order) |
+| "I want to kill myself" | mental-health, **14416 first**, then 108 |
+| "enikk nenju vedana undu" (Manglish) | medical emergency |
+| "എനിക്ക് പനിയുണ്ട്" (agglutinated Malayalam) | general — the substring path works |
+| Every emergency response | `specialties: []` — no doctor list to browse instead |
+| `POST /api/route-symptom` | `cache-control: no-store`; 400 on short/absent text |
+| Rate limit | 429 after 20 requests in the window, with `retry-after` |
+| `/`, `/results`, `/doctor/1` | 200, no errors in the server log |
+| Profile page for doctor 1 | renders **88** — the same number as the API and the goldens |
 
 ### Notes for whoever is next
 
