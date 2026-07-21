@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, CircleCheck, Pencil, ShieldCheck } from "lucide-react";
+import { ArrowRight, CircleCheck, Pencil, Phone, ShieldCheck, TriangleAlert } from "lucide-react";
 import { SPECIALTIES } from "@/lib/taxonomy";
 import { SCORE_WEIGHTS } from "@/lib/ranking";
 import { SpecialtyTile } from "@/components/SpecialtyTile";
@@ -32,17 +32,13 @@ export default function Home() {
         return;
       }
       const result = data as RoutingResult;
-
-      if (result.emergency) {
-        // Only the matched red-flag keyword travels in the URL — never the
-        // typed symptom text, which is sensitive personal data under the
-        // DPDP Act 2023.
-        const flag = result.matched_conditions[0] ?? "";
-        router.push(`/emergency?flag=${encodeURIComponent(flag)}`);
-        return;
-      }
-
       setRouting(result);
+
+      // Red flags render inline below the form (see the alert further down).
+      // The website has no emergency screen — that full-bleed interrupt is the
+      // app's (Dr Evide.dc.html screen 04) and lives in mobile/.
+      if (result.emergency) return;
+
       if (result.specialties.length === 1) {
         goToResults(result.specialties[0].slug, result.matched_conditions);
       }
@@ -108,6 +104,27 @@ export default function Home() {
               </p>
             )}
           </form>
+
+          {/* Red flag. Inline, in the website's own language — the app owns the
+              full-screen interrupt. Kept prominent and actionable: this is the
+              one thing on the page that must not be missed. */}
+          {routing?.emergency && (
+            <div className="emergency-alert" role="alert">
+              <TriangleAlert size={22} aria-hidden="true" style={{ flex: "none" }} />
+              <div style={{ flex: 1 }}>
+                <strong style={{ display: "block", marginBottom: 4 }}>
+                  This could be an emergency
+                </strong>
+                <p style={{ margin: "0 0 12px", lineHeight: 1.5 }}>
+                  {routing.emergency_message}
+                </p>
+                <a className="sh-btn sh-btn--danger" href="tel:108">
+                  <Phone size={18} aria-hidden="true" />
+                  Call 108 — free ambulance
+                </a>
+              </div>
+            </div>
+          )}
 
           {/* Ambiguous routing — let the person choose. */}
           {routing && routing.specialties.length > 1 && (

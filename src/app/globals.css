@@ -493,133 +493,27 @@ input[type="range"]:focus-visible { outline: none; box-shadow: var(--focus-ring)
   .action-card { position: sticky; top: calc(var(--topbar-h) + 24px); }
 }
 
-/* ═══ Emergency interrupt ═══════════════════════════════════════════ */
+/* ═══ Emergency alert ═══════════════════════════════════════════════ */
 
-/* Fixed overlay so it covers the app shell — it is an interrupt, not a page. */
-.emergency-screen {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  overflow-y: auto;
-  background: var(--emergency);
-  color: #fff;
+/* Inline notice on the home page. The website has no emergency screen — the
+   full-bleed red interrupt is the app's (Dr Evide.dc.html screen 04) and lives
+   in mobile/app/emergency.tsx. --danger is a semantic utility colour, so this
+   does not count against the design system's two-accent limit. */
+.emergency-alert {
   display: flex;
-  flex-direction: column;
-}
-.emergency-inner {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  max-width: 460px;
-  margin: 0 auto;
-  padding: 28px 26px 32px;
-}
-.emergency-disc {
-  width: 96px;
-  height: 96px;
-  margin: 0 auto 22px;
-  border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.15);
-  border: 2px solid rgba(255, 255, 255, 0.35);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.emergency-eyebrow {
-  font-family: var(--font-body);
-  font-weight: var(--fw-bold);
-  font-size: 13px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.85);
-  margin-bottom: 12px;
-}
-/* The one expressive element on this view. */
-.emergency-title {
-  font-family: var(--font-display-caps);
-  text-transform: uppercase;
-  font-weight: 400;
-  font-size: clamp(2.75rem, 1.8rem + 4vw, 3.5rem);
-  line-height: 0.95;
-  letter-spacing: -0.01em;
-  margin: 0 0 18px;
-  color: #fff;
-}
-.emergency-body {
-  font-size: 17px;
-  line-height: var(--leading-normal);
-  color: rgba(255, 255, 255, 0.92);
-  margin: 0 auto;
-  max-width: 320px;
-}
-.emergency-body strong { color: #fff; }
-.call-card {
-  background: #fff;
-  border-radius: 20px;
-  padding: 22px 24px;
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  box-shadow: var(--shadow-md);
-}
-.call-card__disc {
-  width: 60px;
-  height: 60px;
-  border-radius: var(--radius-pill);
-  background: var(--emergency);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-}
-.call-card__num {
-  font-family: var(--font-display-caps);
-  text-transform: uppercase;
-  font-size: 34px;
-  line-height: 1;
-  color: var(--emergency);
-}
-.call-card__sub {
-  font-size: 14px;
-  color: var(--text-muted);
-  font-weight: var(--fw-semibold);
-  margin-top: 3px;
-}
-.emergency-outline {
-  width: 100%;
-  margin-top: 14px;
-  height: 56px;
-  border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.16);
-  border: 1.5px solid rgba(255, 255, 255, 0.4);
-  color: #fff;
-  font-family: var(--font-body);
-  font-size: 16px;
-  font-weight: var(--fw-semibold);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  text-decoration: none;
-}
-.emergency-outline:hover { background: rgba(255, 255, 255, 0.24); color: #fff; }
-.emergency-dismiss {
-  display: inline-block;
+  gap: 14px;
+  align-items: flex-start;
   margin-top: 20px;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.8);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.4);
-  padding-bottom: 2px;
-  background: none;
-  border-left: none;
-  border-right: none;
-  border-top: none;
-  cursor: pointer;
-  font-family: var(--font-body);
+  padding: 18px;
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
+  color: var(--danger);
+  font-size: 15px;
 }
-.emergency-dismiss:hover { color: #fff; }
+.emergency-alert strong { font-size: 16px; }
+.emergency-alert p { color: var(--text-muted); }
+
 
 /* ═══ States ════════════════════════════════════════════════════════ */
 

@@ -47,6 +47,8 @@
   --font-body: "General Sans", "Noto Sans Malayalam", ui-sans-serif, system-ui, sans-serif;
 
   /* ── App-specific ─────────────────────────────────────────── */
-  --emergency: #B4231A;
+  /* No --emergency field colour here: the full-bleed red emergency screen
+     belongs to the mobile app (mobile/src/theme.ts), not the website. The
+     website surfaces red flags as an inline alert on --danger. */
   --topbar-h: 68px;
 }
