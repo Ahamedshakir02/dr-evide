@@ -47,11 +47,22 @@ locally first, regardless.
 ## Project structure
 
 ```
-src/app/            pages (home, results, doctor profile) + API routes
+src/app/            web pages (home, results, doctor profile, emergency) + API routes
+src/components/     UI built from the Shakir design system
+src/styles/ds/      the design system, copied verbatim from the handoff bundle
 src/lib/            taxonomy, routing, ranking, db access
 db/                 schema.sql, sample-doctors.json (fictional!)
 scripts/            db-setup.mjs, db-seed.mjs
+mobile/             the React Native (Expo) app — see mobile/README.md
+dr-evide-doctor-discovery/   design handoff bundle (reference, not built)
 ```
+
+Both apps come from the same design bundle: `Dr Evide Web.dc.html` is the website,
+`Dr Evide.dc.html` is the four-screen mobile app.
+
+`mobile/src/lib/{types,ranking,taxonomy,format}.ts` and `sample-doctors.json` are
+**copies** of the files here. Change one side, copy to the other — if they drift, the
+same doctor scores differently in the app and on the site.
 
 ## IMPORTANT — before any public launch
 
