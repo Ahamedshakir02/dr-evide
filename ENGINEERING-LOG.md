@@ -57,6 +57,44 @@ guidance. That advice predates npm hoisting: with a hoisted tree Metro still nee
 walk up to find transitive dependencies living in neither `nodeModulesPaths` entry.
 Removed — 20/20 checks now pass.
 
+### Local Android builds require Windows long path support
+
+The first `expo run:android` compiled everything — Kotlin, Java, and the native C++ for
+reanimated and worklets — then failed in `:app:buildCMakeDebug`:
+
+```
+ninja: error: Stat(...RNGestureHandlerDetectorShadowNode.cpp.o): Filename longer than 260 characters
+```
+
+Measured rather than guessed. The failing object path is **363 characters against a
+260 limit**, and it decomposes into two parts that cannot be shortened:
+
+| Segment | Length |
+|---|---|
+| CMake object dir (`...autolinked_build/CMakeFiles/react_codegen_*.dir/`) | 119 |
+| Mirrored source tail (`node_modules/react-native-gesture-handler/shared/shadowNodes/...`) | 153 |
+| **Irreducible minimum, with a zero-length prefix** | **272** |
+
+272 already exceeds 260, so **no amount of relocation can fix this**. Measured
+candidates, for the record:
+
+| Approach | Result |
+|---|---|
+| `subst X:` the repo root | 305 — fails |
+| Short CMake staging dir (`C:\b`) | 307 — fails |
+| Both combined | 278 — still fails |
+
+The monorepo move is not the cause: `apps/` added about 5 characters to a problem that
+is 103 over.
+
+The fix is `HKLM\SYSTEM\CurrentControlSet\Control\FileSystem\LongPathsEnabled = 1`
+plus a reboot — it requires elevation, so it is an operator step, not something the
+repo can carry. `git config core.longpaths true` is set in the repo (no elevation
+needed) and is a separate concern from the compiler toolchain.
+
+The alternative that avoids the issue entirely is EAS: the cloud builders are Linux
+and have no `MAX_PATH`, which is part of why `eas.json` is committed.
+
 ---
 
 ## 2026-07-22 — v0.2.0: monorepo, verifiable TrustScore, safer red flags
