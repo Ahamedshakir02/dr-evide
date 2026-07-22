@@ -21,8 +21,10 @@ config.resolver.nodeModulesPaths = [
   path.resolve(workspaceRoot, "node_modules"),
 ];
 
-// Never walk up past the workspace root looking for modules; that path only
-// finds surprises on a developer's machine.
-config.resolver.disableHierarchicalLookup = true;
+// Hierarchical lookup is deliberately left enabled (the Expo default).
+// Disabling it is older monorepo advice that predates npm hoisting: with a
+// hoisted tree, Metro still needs to walk up to find transitive dependencies
+// that live in neither of the two paths above. `npx expo-doctor` flags the
+// override for exactly this reason.
 
 module.exports = config;

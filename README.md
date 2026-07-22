@@ -80,12 +80,17 @@ differently in the app and on the site. If both apps need it, it belongs in `pac
 
 ```bash
 npm run dev          # web app on :3000
-npm run mobile       # Expo
+npm run mobile       # Metro for the mobile dev client
 npm test             # 109 tests — ranking goldens + emergency corpus
 npm run typecheck    # all four workspaces
 npm run check:integrity   # fails if a paid-placement field appears
 npm run verify       # everything above, in the order CI runs it
 ```
+
+The mobile app uses a **development build, not Expo Go** — Expo Go can only open
+projects on the SDK its store build was compiled against, which breaks every time
+the project is ahead of the store. See `apps/mobile/README.md` for building the
+dev client locally or via EAS.
 
 ## Engineering log
 

@@ -11,6 +11,7 @@
     "@react-native-community/slider": "5.2.0",
     "expo": "~57.0.7",
     "expo-constants": "~57.0.6",
+    "expo-dev-client": "~57.0.7",
     "expo-font": "~57.0.1",
     "expo-linking": "~57.0.3",
     "expo-router": "~57.0.7",
@@ -30,10 +31,15 @@
     "typescript": "~6.0.3"
   },
   "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "start": "expo start --dev-client",
+    "start:go": "expo start --go",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web",
+    "prebuild": "expo prebuild --clean",
+    "build:dev": "eas build --profile development --platform android",
+    "build:preview": "eas build --profile preview --platform android",
+    "doctor": "expo-doctor",
     "typecheck": "tsc --noEmit"
   },
   "private": true
