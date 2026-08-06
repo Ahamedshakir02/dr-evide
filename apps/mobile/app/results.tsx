@@ -4,22 +4,29 @@ import Slider from "@react-native-community/slider";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ChevronLeft, MapPin, WifiOff } from "lucide-react-native";
+import { currentYear, findDoctors } from "../src/lib/api";
+import { useUserLocation } from "../src/lib/location";
 import {
-  DEFAULT_LOCATION,
-  DEFAULT_RADIUS_KM,
-  currentYear,
-  findDoctors,
-} from "../src/lib/api";
-import { SPECIALTIES } from "@dr-evide/core";
+  MAX_RADIUS_KM,
+  MIN_RADIUS_KM,
+  MOBILE_RADIUS_DEFAULT_KM,
+  SPECIALTIES,
+} from "@dr-evide/core";
 import type { RankedDoctor, SpecialtySlug } from "@dr-evide/core";
 import { DoctorCard } from "../src/components/DoctorCard";
 import { RankedIcon } from "../src/components/SpecialtyIcon";
 import { Pledge } from "../src/components/ui";
 import { color, font, radius, space, text } from "../src/theme";
 
-const RADIUS_MIN = 1;
-/** Deviation: the mock caps at 15km. Edappal is rural, so the ceiling is 25. */
-const RADIUS_MAX = 25;
+/**
+ * Bounds come from @dr-evide/core, not from here.
+ *
+ * This screen used to declare its own ceiling next to a comment describing
+ * "the web's 15km" while the web slider actually opened at 5km — three files
+ * with three different ideas of the same search. See geo.ts.
+ */
+const RADIUS_MIN = MIN_RADIUS_KM;
+const RADIUS_MAX = MAX_RADIUS_KM;
 
 /** Results — Dr Evide.dc.html screen 02 (lines 149-280). */
 export default function ResultsScreen() {
@@ -28,9 +35,17 @@ export default function ResultsScreen() {
   const specialty = (params.specialty ?? "general") as SpecialtySlug;
   const conditionsRaw = params.conditions ?? "";
 
-  const [radiusKm, setRadiusKm] = useState(DEFAULT_RADIUS_KM);
+  const [radiusKm, setRadiusKm] = useState(MOBILE_RADIUS_DEFAULT_KM);
   const [doctors, setDoctors] = useState<RankedDoctor[]>([]);
   const [offline, setOffline] = useState(false);
+
+  /**
+   * Starts at the Edappal fallback and refines once the fix lands, so the list
+   * appears immediately rather than waiting on a GPS chip. Cached per session,
+   * so the profile screen measures from the same origin and shows the same
+   * TrustScore — see src/lib/location.ts.
+   */
+  const coords = useUserLocation();
   // The year the listed scores were computed against, so each card's "N yrs"
   // matches the experience component of the score printed beside it.
   const [asOfYear, setAsOfYear] = useState(currentYear);
@@ -45,7 +60,8 @@ export default function ResultsScreen() {
       const res = await findDoctors({
         specialty,
         conditions,
-        ...DEFAULT_LOCATION,
+        lat: coords.lat,
+        lng: coords.lng,
         radiusKm,
       });
       setDoctors(res.doctors);
@@ -55,7 +71,7 @@ export default function ResultsScreen() {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [specialty, conditionsRaw, radiusKm]);
+  }, [specialty, conditionsRaw, radiusKm, coords.lat, coords.lng]);
 
   useEffect(() => {
     load();
@@ -112,8 +128,18 @@ export default function ResultsScreen() {
 
         {offline && (
           <View style={s.offlineRow}>
-            <WifiOff size={13} color={color.warning} />
+            <WifiOff size={13} color={color.warningText} />
             <Text style={s.offlineText}>Offline — showing bundled sample doctors</Text>
+          </View>
+        )}
+
+        {/* Say so rather than quietly measuring from the wrong place. Distance
+            drives the list order and part of the score, so "near you" being
+            "near the town centre" is a fact the person is entitled to. */}
+        {!coords.precise && (
+          <View style={s.offlineRow}>
+            <MapPin size={13} color={color.textFaint} />
+            <Text style={s.approxText}>Distances measured from Edappal town centre</Text>
           </View>
         )}
       </View>
@@ -191,7 +217,8 @@ const s = StyleSheet.create({
   radiusValue: { fontFamily: font.monoBold, fontSize: text.sm, color: color.accentText },
   count: { fontFamily: font.body, fontSize: 13, color: color.textMuted },
   offlineRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: space[2] },
-  offlineText: { fontFamily: font.body, fontSize: text.xs, color: color.warning },
+  offlineText: { fontFamily: font.body, fontSize: text.xs, color: color.warningText },
+  approxText: { fontFamily: font.body, fontSize: text.xs, color: color.textFaint },
   list: { padding: 22, gap: 14, paddingBottom: space[12] },
   empty: {
     textAlign: "center",

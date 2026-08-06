@@ -1,5 +1,6 @@
 import {
   DEFAULT_LOCATION,
+  MOBILE_RADIUS_DEFAULT_KM,
   SAMPLE_DOCTORS,
   SPECIALTIES,
   haversineKm,
@@ -31,10 +32,15 @@ import {
 
 export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
 
-/** The phone default. Narrower than the web's 15km — a phone user is usually already out. */
-export const DEFAULT_RADIUS_KM = 5;
-
-export { DEFAULT_LOCATION };
+/**
+ * Re-exported from @dr-evide/core, not redeclared.
+ *
+ * The phone default is still narrower than the website's — a phone user is
+ * usually already out — but that difference is now stated once, in geo.ts,
+ * rather than as a local constant here that drifted from the one the API
+ * actually applies.
+ */
+export { DEFAULT_LOCATION, MOBILE_RADIUS_DEFAULT_KM };
 
 const TIMEOUT_MS = 6000;
 

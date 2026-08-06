@@ -11,15 +11,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ChevronLeft, CircleCheck, Navigation, Phone } from "lucide-react-native";
+import { currentYear, getDoctor, haversineKm, scoreOne } from "../../src/lib/api";
+import { useUserLocation } from "../../src/lib/location";
 import {
-  DEFAULT_LOCATION,
-  DEFAULT_RADIUS_KM,
-  currentYear,
-  getDoctor,
-  haversineKm,
-  scoreOne,
-} from "../../src/lib/api";
-import {
+  MOBILE_RADIUS_DEFAULT_KM,
   SCORE_WEIGHTS,
   SPECIALTIES,
   directionsUrl,
@@ -55,20 +50,23 @@ export default function DoctorScreen() {
   const [loading, setLoading] = useState(true);
   const [distanceKm, setDistanceKm] = useState(0);
 
+  /**
+   * The same session-cached origin the results screen measured from. Reading it
+   * here rather than from DEFAULT_LOCATION is what makes the ring on this
+   * screen equal the ring on the card that was tapped — distance feeds the
+   * accessibility component of the score, so two origins meant two scores.
+   */
+  const coords = useUserLocation();
+
   useEffect(() => {
     (async () => {
       const d = await getDoctor(parseInt(params.id, 10));
       if (d) {
         // Reproduce the search context the list ranked under, so the ring here
         // shows exactly the number shown on the card that was tapped.
-        const radiusKm = parseFloat(params.radius ?? "") || DEFAULT_RADIUS_KM;
+        const radiusKm = parseFloat(params.radius ?? "") || MOBILE_RADIUS_DEFAULT_KM;
         const conditions = (params.conditions ?? "").split(",").filter(Boolean);
-        const distance_km = haversineKm(
-          DEFAULT_LOCATION.lat,
-          DEFAULT_LOCATION.lng,
-          d.lat,
-          d.lng
-        );
+        const distance_km = haversineKm(coords.lat, coords.lng, d.lat, d.lng);
         setDistanceKm(distance_km);
         setScore(
           scoreOne(
@@ -80,7 +78,7 @@ export default function DoctorScreen() {
       setDoctor(d);
       setLoading(false);
     })();
-  }, [params.id, params.conditions, params.radius]);
+  }, [params.id, params.conditions, params.radius, coords.lat, coords.lng]);
 
   if (loading) {
     return (
