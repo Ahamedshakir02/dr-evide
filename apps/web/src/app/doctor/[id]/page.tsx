@@ -1,107 +1,66 @@
-import { ChevronLeft, CircleCheck, MapPin, Navigation, Phone } from "lucide-react";
+import { ChevronLeft, MapPin, Navigation, Phone } from "lucide-react";
+import { notFound } from "next/navigation";
 import {
-  DEFAULT_LOCATION,
-  DEFAULT_RADIUS_KM,
-  SPECIALTIES,
   directionsUrl,
   experienceYears,
   formatFee,
-  haversineKm,
   initials,
-  scoreOne,
+  isSpecialtySlug,
   telHref,
 } from "@dr-evide/core";
 import { getDoctor } from "@dr-evide/db";
-import { TrustRing } from "@/components/TrustRing";
-import { ScoreBreakdown } from "@/components/ScoreBreakdown";
+import { ClinicDistance, ProfileScore } from "@/components/ProfileScore";
 import { CredentialRow } from "@/components/CredentialRow";
 import { SamplePill, VerifiedPill } from "@/components/Badges";
+import { SampleDataBanner } from "@/components/SampleDataBanner";
+import { ExperienceYears, SpecialtyName, Txt } from "@/components/Txt";
+
+/**
+ * Doctor profile.
+ *
+ * Server-rendered for everything that describes the person — name, credentials,
+ * fee, clinic, timings — and client-rendered for everything that depends on the
+ * search that led here. That split is not stylistic: the search carries routed
+ * condition keywords and a precise location, and those used to travel in the
+ * query string. See lib/search-context.ts.
+ */
 
 // Next 15: params and searchParams are Promises and must be awaited.
 interface Props {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{
-    specialty?: string;
-    conditions?: string;
-    lat?: string;
-    lng?: string;
-    radius?: string;
-  }>;
+  /** Only the specialty, which is a department rather than a complaint. */
+  searchParams: Promise<{ specialty?: string }>;
 }
 
 export default async function DoctorPage(props: Props) {
-  const [{ id: rawId }, searchParams] = await Promise.all([
-    props.params,
-    props.searchParams,
-  ]);
+  const [{ id: rawId }, searchParams] = await Promise.all([props.params, props.searchParams]);
 
   const id = parseInt(rawId, 10);
   const doctor = Number.isNaN(id) ? null : await getDoctor(id);
 
-  if (!doctor) {
-    return (
-      <>
-        <a className="link-back" href="/">
-          <ChevronLeft size={16} aria-hidden="true" /> Back to search
-        </a>
-        <p className="empty-state">Doctor not found.</p>
-      </>
-    );
-  }
+  // A missing doctor is a 404, not a page that renders "not found" with a 200.
+  // Crawlers and monitoring both read the status code, never the copy.
+  if (!doctor) notFound();
 
-  // Reproduce the search context the results page ranked under, so the ring
-  // here shows exactly the number shown on the card that was clicked.
-  const lat = parseFloat(searchParams.lat ?? "") || DEFAULT_LOCATION.lat;
-  const lng = parseFloat(searchParams.lng ?? "") || DEFAULT_LOCATION.lng;
-  const radiusKm = parseFloat(searchParams.radius ?? "") || DEFAULT_RADIUS_KM;
-  const conditions = (searchParams.conditions ?? "")
-    .split(",")
-    .map((c) => c.trim().toLowerCase())
-    .filter(Boolean);
-
-  // One clock reading, shared by scoring and by the "N years" line below, so
-  // the score and the experience figure can never disagree about the year.
   const asOfYear = new Date().getFullYear();
-
-  const distance_km = haversineKm(lat, lng, doctor.lat, doctor.lng);
-  const { trust_score, score_breakdown } = scoreOne(
-    { ...doctor, distance_km },
-    { matchedConditions: conditions, radiusKm, asOfYear }
-  );
-
   const years = experienceYears(doctor, asOfYear);
-  const specialty = SPECIALTIES[doctor.specialty_slug];
 
-  const backParams = new URLSearchParams({
-    specialty: searchParams.specialty ?? doctor.specialty_slug,
-  });
-  if (searchParams.conditions) backParams.set("conditions", searchParams.conditions);
-
-  const actions = (
-    <>
-      {doctor.phone && (
-        <a className="sh-btn sh-btn--primary sh-btn--lg" href={telHref(doctor.phone)}>
-          <Phone size={20} aria-hidden="true" />
-          Call clinic
-        </a>
-      )}
-      <a
-        className="sh-btn sh-btn--secondary sh-btn--lg"
-        href={directionsUrl(doctor.lat, doctor.lng)}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <Navigation size={20} aria-hidden="true" />
-        Get directions
-      </a>
-    </>
-  );
+  /** Where "back to results" goes. Falls back to the doctor's own department. */
+  const backSlug = isSpecialtySlug(searchParams.specialty)
+    ? searchParams.specialty
+    : doctor.specialty_slug;
 
   return (
     <>
-      <a className="link-back" href={`/results?${backParams.toString()}`}>
-        <ChevronLeft size={16} aria-hidden="true" /> Back to results
+      <a className="link-back" href={`/results?specialty=${backSlug}`}>
+        <ChevronLeft size={16} aria-hidden="true" /> <Txt k="backToResults" />
       </a>
+
+      {doctor.is_sample && (
+        <div style={{ marginTop: 16 }}>
+          <SampleDataBanner />
+        </div>
+      )}
 
       <div className="profile-grid" style={{ marginTop: 20 }}>
         <div>
@@ -126,9 +85,9 @@ export default async function DoctorPage(props: Props) {
               {/* "Dermatologist · MBBS, MD · 12 years" — Dr Evide Web.dc.html:275.
                   Years live here on the website, not in a quick-facts panel. */}
               <div style={{ fontSize: 16, color: "var(--text-muted)", marginBottom: 10 }}>
-                {specialty.name}
+                <SpecialtyName slug={doctor.specialty_slug} />
                 {doctor.qualifications.length > 0 && ` · ${doctor.qualifications.join(", ")}`}
-                {years !== null && ` · ${years} years`}
+                <ExperienceYears years={years} />
               </div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 <VerifiedPill verified={doctor.nmc_verified} regNo={doctor.nmc_reg_no} />
@@ -141,46 +100,12 @@ export default async function DoctorPage(props: Props) {
               treatment (Dr Evide.dc.html:313-326). On the website those facts
               live in the action card to the right, as the web design has them. */}
 
-          {/* ── Why this doctor ranks here ───────────────────── */}
-          <div className="sh-card" style={{ padding: 20, marginBottom: 18 }}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 12,
-                marginBottom: 4,
-              }}
-            >
-              {/* The mock reads "Why she ranks here". Doctor records carry no
-                  gender, so this stays neutral rather than guessing. */}
-              <span
-                style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 17 }}
-              >
-                Why this doctor ranks here
-              </span>
-              <TrustRing score={trust_score} size={58} showDenominator />
-            </div>
-            <p style={{ fontSize: 13, color: "var(--text-muted)", margin: "0 0 16px" }}>
-              TrustScore is built from five signals we can verify. Nothing here is editable by
-              the doctor or by us.
-            </p>
-
-            <ScoreBreakdown breakdown={score_breakdown} />
-
-            <div
-              className="pledge"
-              style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid var(--border)" }}
-            >
-              <CircleCheck size={15} aria-hidden="true" />
-              No paid placement. Ever.
-            </div>
-          </div>
+          <ProfileScore doctor={doctor} specialty={doctor.specialty_slug} />
 
           {/* ── Credentials ──────────────────────────────────── */}
-          <div className="sh-eyebrow" style={{ marginBottom: 10 }}>
-            Credentials
-          </div>
+          <h2 className="sh-eyebrow" style={{ marginBottom: 10 }}>
+            <Txt k="credentials" />
+          </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {doctor.qualifications.map((q) => (
               <CredentialRow
@@ -202,9 +127,9 @@ export default async function DoctorPage(props: Props) {
 
           {doctor.conditions.length > 0 && (
             <>
-              <div className="sh-eyebrow" style={{ margin: "20px 0 10px" }}>
-                Commonly treats
-              </div>
+              <h2 className="sh-eyebrow" style={{ margin: "20px 0 10px" }}>
+                <Txt k="commonlyTreats" />
+              </h2>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 {doctor.conditions.map((c) => (
                   <span key={c} className="sh-tag">
@@ -233,20 +158,39 @@ export default async function DoctorPage(props: Props) {
               <span className="sh-mono" style={{ fontSize: 26, fontWeight: 700 }}>
                 {formatFee(doctor.fee_inr) ?? "—"}
               </span>
-              <span style={{ fontSize: 13, color: "var(--text-faint)" }}>clinic consult</span>
+              <span style={{ fontSize: 13, color: "var(--text-faint)" }}>
+                <Txt k="clinicConsult" />
+              </span>
             </div>
             <div className="meta-item" style={{ marginBottom: 20 }}>
               <MapPin size={15} aria-hidden="true" />
               {doctor.clinic_name ?? "Clinic"}
-              {doctor.town ? `, ${doctor.town}` : ""} · {distance_km.toFixed(1)} km
+              {doctor.town ? `, ${doctor.town}` : ""} ·{" "}
+              <ClinicDistance doctor={doctor} specialty={doctor.specialty_slug} />
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{actions}</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {doctor.phone && (
+                <a className="sh-btn sh-btn--primary sh-btn--lg" href={telHref(doctor.phone)}>
+                  <Phone size={20} aria-hidden="true" />
+                  <Txt k="callClinic" />
+                </a>
+              )}
+              <a
+                className="sh-btn sh-btn--secondary sh-btn--lg"
+                href={directionsUrl(doctor.lat, doctor.lng)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Navigation size={20} aria-hidden="true" />
+                <Txt k="getDirections" />
+              </a>
+            </div>
 
             {doctor.timings && (
               <div style={{ marginTop: 20, paddingTop: 18, borderTop: "1px solid var(--border)" }}>
-                <div className="sh-eyebrow" style={{ marginBottom: 8 }}>
-                  Timings
-                </div>
+                <h2 className="sh-eyebrow" style={{ marginBottom: 8 }}>
+                  <Txt k="timings" />
+                </h2>
                 <div style={{ fontSize: 14, color: "var(--text-muted)" }}>{doctor.timings}</div>
               </div>
             )}

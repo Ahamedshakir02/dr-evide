@@ -1,18 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, CircleCheck, Pencil, Phone, ShieldCheck, TriangleAlert } from "lucide-react";
-import { SCORE_WEIGHTS, SPECIALTIES } from "@dr-evide/core";
+import {
+  SCORE_WEIGHTS,
+  SPECIALTIES,
+  WEB_RADIUS_DEFAULT_KM,
+  specialtyText,
+} from "@dr-evide/core";
 import { SpecialtyTile } from "@/components/SpecialtyTile";
-import type { RoutingResult } from "@dr-evide/core";
+import { useLang } from "@/lib/lang";
+import { defaultSearchContext, saveSearchContext } from "@/lib/search-context";
+import type { RoutingResult, SpecialtySlug } from "@dr-evide/core";
 
 export default function Home() {
   const router = useRouter();
+  const { lang, t } = useLang();
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [routing, setRouting] = useState<RoutingResult | null>(null);
+
+  const emergencyRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * Bring the red flag to the person.
+   *
+   * On a phone the alert renders below a three-row textarea, a hint row and a
+   * 58px button, so the most important message in the product could land off
+   * the bottom of the screen with nothing to say it was there. role="alert"
+   * covers a screen reader; this covers everyone else. Focus moves too, so the
+   * next Tab lands on "Call 108" rather than back in the textarea.
+   */
+  useEffect(() => {
+    if (!routing?.emergency) return;
+    const el = emergencyRef.current;
+    if (!el) return;
+    el.scrollIntoView({ block: "center", behavior: "smooth" });
+    el.focus({ preventScroll: true });
+  }, [routing]);
 
   async function handleRoute(e: React.FormEvent) {
     e.preventDefault();
@@ -42,16 +69,32 @@ export default function Home() {
         goToResults(result.specialties[0].slug, result.matched_conditions);
       }
     } catch {
-      setError("Something went wrong. Please try again.");
+      // Name the escape hatch. "Something went wrong" leaves someone unwell
+      // with nothing to do; the department tiles below still work offline of
+      // the routing service.
+      setError(
+        "We couldn't reach the routing service. Check your connection and try again — or pick a department below."
+      );
     } finally {
       setLoading(false);
     }
   }
 
-  function goToResults(slug: string, conditions: string[]) {
-    const params = new URLSearchParams({ specialty: slug });
-    if (conditions.length) params.set("conditions", conditions.join(","));
-    router.push(`/results?${params.toString()}`);
+  /**
+   * The conditions go into sessionStorage, never the URL.
+   *
+   * They are keywords lifted from a health complaint — sensitive personal data
+   * under the DPDP Act 2023 — and a query string would put them in browser
+   * history on a shared phone and in every access log in front of the app. See
+   * lib/search-context.ts for the full reasoning and what it costs.
+   */
+  function goToResults(slug: SpecialtySlug, conditions: string[]) {
+    saveSearchContext({
+      ...defaultSearchContext(slug),
+      conditions,
+      radiusKm: WEB_RADIUS_DEFAULT_KM,
+    });
+    router.push(`/results?specialty=${slug}`);
   }
 
   return (
@@ -60,32 +103,35 @@ export default function Home() {
         {/* ── Ask ───────────────────────────────────────────────── */}
         <div>
           <div className="sh-eyebrow" style={{ marginBottom: 14 }}>
-            Describe it in your own words
+            {t.homeEyebrow}
           </div>
           <h1 className="hero-title">
-            Find the right doctor — not the one who <em>paid the most.</em>
+            {t.homeTitleLead} <em>{t.homeTitleEmphasis}</em>
           </h1>
-          <p className="hero-sub">
-            Tell us what&apos;s bothering you. We route you to the right department, then rank
-            nearby doctors by a transparent TrustScore built from verified credentials and real
-            reviews.
-          </p>
+          <p className="hero-sub">{t.homeSub}</p>
 
           <form onSubmit={handleRoute}>
+            {/* A real label, not a placeholder. A placeholder disappears the
+                moment someone starts typing — on the product's single most
+                important control, exactly when they may still need it. */}
+            <label htmlFor="symptom" className="field-label">
+              {t.symptomLabel}
+            </label>
             <textarea
+              id="symptom"
               className="sh-textarea"
               rows={3}
               style={{ fontSize: 17, lineHeight: 1.5, padding: 16, borderRadius: 16 }}
-              placeholder="e.g. My hair is falling a lot lately…"
+              placeholder={t.symptomPlaceholder}
               value={text}
               onChange={(e) => setText(e.target.value)}
               maxLength={500}
-              aria-label="Describe your symptoms"
+              aria-describedby="symptom-hint"
             />
 
-            <div className="hint-row" style={{ margin: "10px 2px 16px" }}>
+            <div className="hint-row" id="symptom-hint" style={{ margin: "10px 2px 16px" }}>
               <Pencil size={15} aria-hidden="true" />
-              <span>Malayalam &amp; English both work</span>
+              <span>{t.bilingualHint}</span>
             </div>
 
             <button
@@ -93,7 +139,7 @@ export default function Home() {
               style={{ height: 58, fontSize: 18, borderRadius: 16 }}
               disabled={loading || text.trim().length < 3}
             >
-              {loading ? "Finding…" : "Find the right doctor"}
+              {loading ? t.finding : t.findDoctor}
               {!loading && <ArrowRight size={20} aria-hidden="true" />}
             </button>
 
@@ -108,19 +154,33 @@ export default function Home() {
               full-screen interrupt. Kept prominent and actionable: this is the
               one thing on the page that must not be missed. */}
           {routing?.emergency && (
-            <div className="emergency-alert" role="alert">
+            <div className="emergency-alert" role="alert" tabIndex={-1} ref={emergencyRef}>
               <TriangleAlert size={22} aria-hidden="true" style={{ flex: "none" }} />
               <div style={{ flex: 1 }}>
                 <strong style={{ display: "block", marginBottom: 4 }}>
-                  This could be an emergency
+                  {t.couldBeEmergency}
                 </strong>
+                {/* The one string in the product where the reader's language is
+                    a safety property rather than a courtesy. */}
                 <p style={{ margin: "0 0 12px", lineHeight: 1.5 }}>
-                  {routing.emergency_message}
+                  {(lang === "ml" ? routing.emergency_message_ml : null) ??
+                    routing.emergency_message}
                 </p>
-                <a className="sh-btn sh-btn--danger" href="tel:108">
-                  <Phone size={18} aria-hidden="true" />
-                  Call 108 — free ambulance
-                </a>
+                {/* Rendered from the helplines the match carried, so a
+                    mental-health red flag offers Tele-MANAS first rather than
+                    an ambulance. Falls back to 108 if the field is absent. */}
+                <div className="emergency-alert__actions">
+                  {(
+                    routing.emergency_helplines ?? [
+                      { label: "108 — free ambulance", number: "108" },
+                    ]
+                  ).map((h) => (
+                    <a key={h.number} className="sh-btn sh-btn--danger" href={`tel:${h.number}`}>
+                      <Phone size={18} aria-hidden="true" />
+                      {t.call} {h.label}
+                    </a>
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -129,7 +189,7 @@ export default function Home() {
           {routing && routing.specialties.length > 1 && (
             <div className="sh-card" style={{ marginTop: 20, padding: 20 }}>
               <div className="sh-eyebrow" style={{ marginBottom: 12 }}>
-                This could be one of two departments
+                {t.ambiguousHeading}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 {routing.specialties.map((s) => (
@@ -138,7 +198,7 @@ export default function Home() {
                       className="sh-btn sh-btn--secondary"
                       onClick={() => goToResults(s.slug, routing.matched_conditions)}
                     >
-                      {SPECIALTIES[s.slug].name}
+                      {specialtyText(s.slug, lang).name}
                     </button>
                     <p
                       style={{
@@ -181,7 +241,7 @@ export default function Home() {
             <span
               style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 19 }}
             >
-              How TrustScore works
+              {t.howTrustScoreWorks}
             </span>
           </div>
           <p
@@ -192,13 +252,16 @@ export default function Home() {
               lineHeight: 1.55,
             }}
           >
-            A 0–100 score built from five signals we can actually verify — and nothing else.
+            {t.trustScoreBlurb}
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {SCORE_WEIGHTS.map(({ key, label, max }) => (
+            {/* The weights themselves stay in @dr-evide/core — only their
+                labels are translated, so the numbers can never drift apart
+                from the ones scoring actually applies. */}
+            {SCORE_WEIGHTS.map(({ key, max }) => (
               <div key={key} className="weight-row">
                 <span className="weight-row__pct sh-mono">{max}%</span>
-                <span>{label}</span>
+                <span>{t.weightLabels[key]}</span>
               </div>
             ))}
           </div>
@@ -207,7 +270,7 @@ export default function Home() {
             style={{ marginTop: 18, paddingTop: 16, borderTop: "1px solid var(--border)" }}
           >
             <CircleCheck size={15} aria-hidden="true" />
-            No paid placement. Ever.
+            {t.noPaidPlacement}
           </div>
         </div>
       </div>
@@ -215,16 +278,15 @@ export default function Home() {
       {/* ── Departments ─────────────────────────────────────────── */}
       <div className="rule-row" style={{ margin: "40px 0 18px" }}>
         <span className="sh-eyebrow" style={{ whiteSpace: "nowrap" }}>
-          Or pick a department
+          {t.orPickDepartment}
         </span>
       </div>
 
       <div className="specialty-grid">
-        {Object.entries(SPECIALTIES).map(([slug, info]) => (
-          <SpecialtyTile key={slug} slug={slug} info={info} />
+        {(Object.keys(SPECIALTIES) as SpecialtySlug[]).map((slug) => (
+          <SpecialtyTile key={slug} slug={slug} />
         ))}
       </div>
-
     </>
   );
 }
