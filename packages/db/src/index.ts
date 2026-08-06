@@ -18,12 +18,20 @@ import {
 
 export type DoctorWithDistance = Doctor & { distance_km: number };
 
-let pool: Pool | null = null;
+/**
+ * The pool hangs off globalThis, not a module-level `let`.
+ *
+ * Next's dev server re-evaluates modules on every save, so a module-scoped pool
+ * is a new pool per edit — ten more connections each time, until Postgres stops
+ * accepting them. In production the module is evaluated once and this behaves
+ * identically to a plain variable.
+ */
+const globalForPg = globalThis as unknown as { __drEvidePool?: Pool };
 
 function getPool(): Pool | null {
   if (!process.env.DATABASE_URL) return null;
-  if (!pool) {
-    pool = new Pool({
+  if (!globalForPg.__drEvidePool) {
+    globalForPg.__drEvidePool = new Pool({
       connectionString: process.env.DATABASE_URL,
       // A doctor search is a single indexed lookup; if it has not answered in
       // five seconds the database is unhealthy and the user is better served by
@@ -33,7 +41,24 @@ function getPool(): Pool | null {
       max: 10,
     });
   }
-  return pool;
+  return globalForPg.__drEvidePool;
+}
+
+/**
+ * Is the database reachable? For /api/health only.
+ *
+ * Returns a string rather than throwing, because a health endpoint that throws
+ * tells a load balancer less than one that answers.
+ */
+export async function checkDatabase(): Promise<"sample" | "ok" | "unreachable"> {
+  const p = getPool();
+  if (!p) return "sample";
+  try {
+    await p.query("SELECT 1");
+    return "ok";
+  } catch {
+    return "unreachable";
+  }
 }
 
 /** True when the app is serving fictional sample records rather than real data. */
@@ -79,6 +104,23 @@ export async function getDoctor(id: number): Promise<Doctor | null> {
   return SAMPLE_DOCTORS.find((d) => d.id === id) ?? null;
 }
 
+/**
+ * The most doctors one search will consider.
+ *
+ * This is a truncation *before* ranking, and truncation is by distance while
+ * ranking is by TrustScore — so past this many candidates the highest-scoring
+ * doctor in the radius can be dropped for being marginally farther away than
+ * the cut. That directly contradicts "distance is a filter and a tiebreaker,
+ * not a quality signal" (see ranking.ts), so the cap has to sit above any
+ * plausible real count rather than at a comfortable page size.
+ *
+ * A radius is capped at 25km (MAX_RADIUS_KM) and the launch area is rural: 200
+ * was low enough for a single specialty in a dense town to reach it, 2000 is
+ * not, and it is still a bound rather than an unbounded scan. If a search ever
+ * hits it, `truncated` on the result says so instead of failing quietly.
+ */
+const SEARCH_CANDIDATE_CAP = 2_000;
+
 async function findDoctorsPg(
   p: Pool,
   { specialty, lat, lng, radiusKm }: SearchParams
@@ -90,7 +132,7 @@ async function findDoctorsPg(
      WHERE specialty_slug = $3
        AND ST_DWithin(geom, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography, $4)
      ORDER BY distance_km
-     LIMIT 200`,
+     LIMIT ${SEARCH_CANDIDATE_CAP}`,
     [lng, lat, specialty, radiusKm * 1000]
   );
 
