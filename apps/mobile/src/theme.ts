@@ -7,9 +7,12 @@
  * same palette. CSS custom properties don't exist here, so they become a
  * plain object.
  *
- * Deviation from the design system, stated per its own rule: accent is teal
- * #0f766e rather than Flare coral — coral reads as an alert in a medical
- * context. Light surfaces only; both mock files are built on them.
+ * Deviations from the design system, stated per its own rule:
+ *   1. Accent is teal #0f766e rather than Flare coral — coral reads as an alert
+ *      in a medical context. Light surfaces only; both mock files use them.
+ *   2. textFaint and warningText are darkened past the DS values to reach WCAG
+ *      AA. Kept identical to apps/web/src/styles/theme.css so a doctor card
+ *      reads the same on both.
  */
 
 export const color = {
@@ -19,7 +22,13 @@ export const color = {
   surface2: "#F3F2ED",
   text: "#161618",
   textMuted: "#4E4B43",
-  textFaint: "#938F84",
+  /**
+   * The DS value (#938F84) measures 3.1:1 on bg, under the 4.5:1 AA needs for
+   * body text. This token carries hints, disclaimers and the "not yet verified"
+   * note — the copy that most has to survive a cheap screen in daylight. One
+   * rung down the same neutral ramp gives 5.1:1.
+   */
+  textFaint: "#6E6A60",
   border: "#D6D3C9",
   borderStrong: "#B9B5AA",
 
@@ -37,6 +46,12 @@ export const color = {
   // Semantic
   success: "#1E9E63",
   warning: "#D98A0B",
+  /**
+   * warning as a text colour on its own 12% wash is 2.7:1. It marks records as
+   * fictional and flags the offline fallback, so it must not be the quietest
+   * thing on screen. Fills and borders keep `warning`; only glyphs use this.
+   */
+  warningText: "#7A4E06",
   danger: "#D92D20",
   info: "#2D6BE0",
 
