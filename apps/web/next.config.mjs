@@ -34,6 +34,12 @@ const nextConfig = {
  * script-src unless every script gets a per-request nonce. Both are worth
  * closing later; neither is a reason to ship no policy at all.
  *
+ * `unsafe-eval` is added in development only. Next's React Refresh runtime
+ * evaluates strings, so without it the client bundle throws before hydrating
+ * and every page renders as dead server markup — the form's button never
+ * enables and /results never leaves its skeleton. The production policy is
+ * unchanged: react-refresh does not ship in a build.
+ *
  * The connect/img/font sources are the complete list of third parties this
  * product talks to. Anything not named here cannot be reached from the page,
  * which is the property that matters: an injected script cannot exfiltrate a
@@ -45,7 +51,7 @@ const CSP = [
   "form-action 'self'",
   "frame-ancestors 'none'",
   "object-src 'none'",
-  "script-src 'self' 'unsafe-inline'",
+  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "production" ? "" : " 'unsafe-eval'"}`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com data:",
   // OpenStreetMap raster tiles for the desktop results map.
