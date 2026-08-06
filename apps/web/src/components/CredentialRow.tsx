@@ -1,4 +1,7 @@
+"use client";
+
 import { Check, TriangleAlert } from "lucide-react";
+import { useLang } from "@/lib/lang";
 
 /**
  * A single credential (Dr Evide.dc.html:372-390).
@@ -15,6 +18,7 @@ export function CredentialRow({
   verified: boolean;
   note?: string;
 }) {
+  const { t } = useLang();
   return (
     <div className={`cred-row${verified ? "" : " cred-row--unverified"}`}>
       <span className="cred-row__icon">
@@ -27,7 +31,7 @@ export function CredentialRow({
       <div style={{ flex: 1 }}>
         <div className="cred-row__title">{title}</div>
         <div className="cred-row__note">
-          {note ?? (verified ? "Verified with NMC registry" : "Self-reported · not yet verified")}
+          {note ?? (verified ? t.nmcVerified : t.notVerified)}
         </div>
       </div>
     </div>

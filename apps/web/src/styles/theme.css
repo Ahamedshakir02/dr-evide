@@ -16,6 +16,8 @@
       type Malayalam into the symptom box ("Malayalam & English
       both work"). The Malayalam wordmark lockup itself belongs to
       the app, not this design.
+   4. --text-faint and the warning text colour are darkened past
+      the design system's values to reach WCAG AA. See below.
    ─────────────────────────────────────────────────────────── */
 
 /* The Malayalam webfont is imported at the top of app/globals.css, not here:
@@ -41,6 +43,22 @@
 
   --focus-ring-color: #0f766e;
   --focus-ring: 0 0 0 3px rgba(15, 118, 110, 0.35);
+
+  /* ── Contrast corrections (WCAG AA) ───────────────────────── */
+  /* The design system's --text-faint (#938F84) measures 3.1:1 on
+     --bg. AA wants 4.5:1 for body text, and this token carries the
+     medical disclaimer, the 108 number, and the "not yet verified"
+     credential notes — the copy that most has to be readable, on
+     the cheap screens and in the daylight this product is used in.
+     Stepping down one rung on the same neutral ramp gives 5.1:1
+     without changing the palette. */
+  --text-faint: #6E6A60;
+
+  /* --warning as a text colour on its own 12% tint measures 2.7:1.
+     It marks records as fictional, so it must not be the quietest
+     thing on the card. The fill and border keep --warning; only
+     the glyphs use this. */
+  --warning-text: #7A4E06;
 
   /* ── Malayalam-capable font stacks ────────────────────────── */
   --font-display: "Clash Display", "Noto Sans Malayalam", "General Sans", sans-serif;

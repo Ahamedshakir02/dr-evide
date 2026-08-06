@@ -1,4 +1,7 @@
+"use client";
+
 import { SCORE_WEIGHTS, type ScoreBreakdown as Breakdown } from "@dr-evide/core";
+import { useLang } from "@/lib/lang";
 
 /**
  * "Why this doctor ranks here" (Dr Evide.dc.html:342-359).
@@ -9,14 +12,15 @@ import { SCORE_WEIGHTS, type ScoreBreakdown as Breakdown } from "@dr-evide/core"
  * Same visual treatment, honest labels.
  */
 export function ScoreBreakdown({ breakdown }: { breakdown: Breakdown }) {
+  const { t } = useLang();
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      {SCORE_WEIGHTS.map(({ key, label, max }) => {
+      {SCORE_WEIGHTS.map(({ key, max }) => {
         const value = breakdown[key];
         return (
           <div key={key}>
             <div className="score-row__head">
-              <span style={{ color: "var(--text)", fontWeight: 500 }}>{label}</span>
+              <span style={{ color: "var(--text)", fontWeight: 500 }}>{t.weightLabels[key]}</span>
               <span className="sh-mono" style={{ color: "var(--text-muted)" }}>
                 {value} / {max}
               </span>

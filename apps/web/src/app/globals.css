@@ -61,8 +61,55 @@ a:hover { color: var(--accent-hover); }
   line-height: 1.1;
 }
 .wordmark:hover { color: var(--text); }
+.topbar__end {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+/* The place tag is context, not navigation — it's the first thing to go when
+   the language toggle and the wordmark need the width. */
+.topbar__place { height: 38px; }
+@media (max-width: 520px) {
+  .topbar__place { display: none; }
+}
 @media (min-width: 900px) {
   .topbar__inner { padding: 0 32px; }
+}
+
+/* ── Language toggle ────────────────────────────────────────────────
+   Two buttons rather than a select: there are exactly two languages and
+   both fit, and hiding Malayalam inside a dropdown would put it one tap
+   further from the people most likely to want it. Each option is
+   labelled in its own script so it stays legible to someone who cannot
+   read the other. */
+.lang-toggle {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+}
+.lang-toggle__btn {
+  min-height: 32px;
+  padding: 0 12px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: var(--fw-semibold);
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.lang-toggle__btn:hover { color: var(--text); }
+.lang-toggle__btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.lang-toggle__btn.is-active {
+  background: var(--surface);
+  color: var(--accent-text);
+  box-shadow: var(--shadow-sm);
 }
 
 .shell {
@@ -91,19 +138,56 @@ a:hover { color: var(--accent-hover); }
 
 /* ═══ Shared bits ═══════════════════════════════════════════════════ */
 
+/* Skip link. The first focusable thing on every page, visible only when
+   focused — a keyboard user should not have to tab the whole header to reach
+   a doctor list. */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 12px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 0 0 var(--radius-md) 0;
+  font-weight: var(--fw-semibold);
+  color: var(--text);
+}
+.skip-link:focus {
+  left: 0;
+  box-shadow: var(--focus-ring);
+}
+
+/* Visible label for the symptom box. A placeholder vanishes the moment
+   someone starts typing, which on this product's single most important
+   control is exactly when they may still need it. */
+.field-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 15px;
+  font-weight: var(--fw-semibold);
+  color: var(--text);
+}
+
 .link-back {
+  /* Padded to a 44px target and offset so it still lines up with the content
+     edge. It was a 14px text row with no padding — a real miss on a phone. */
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  min-height: 44px;
+  margin-left: -8px;
+  padding: 0 8px;
   background: none;
   border: none;
-  padding: 0;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-family: var(--font-body);
   font-size: 14px;
   color: var(--text-muted);
 }
 .link-back:hover { color: var(--text); }
+.link-back:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
 .meta-item {
   display: flex;
@@ -315,6 +399,33 @@ input[type="range"]:focus-visible { outline: none; box-shadow: var(--focus-ring)
   .doc-card__name { font-size: 19px; }
 }
 
+/* Ring + qualitative band. The word is what makes the number mean anything;
+   see describeScore in @dr-evide/core. */
+.doc-card__score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+}
+.score-band {
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.score-band--strong  { color: var(--accent-2-text); }
+.score-band--good    { color: var(--accent-text); }
+.score-band--fair    { color: var(--text-muted); }
+.score-band--limited { color: var(--text-faint); }
+
+.doc-card__why {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
 .avatar-initials {
   border-radius: var(--radius-pill);
   background: var(--flare-50);
@@ -332,8 +443,11 @@ input[type="range"]:focus-visible { outline: none; box-shadow: var(--focus-ring)
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  height: 24px;
-  padding: 0 9px;
+  /* 26px, not 24. These are labels rather than controls so they are exempt
+     from the 44px target rule, but they carry the verified / not-verified
+     distinction and were smaller than the text beside them. */
+  height: 26px;
+  padding: 0 10px;
   border-radius: var(--radius-pill);
   font-size: 12px;
   font-weight: var(--fw-semibold);
@@ -351,8 +465,8 @@ input[type="range"]:focus-visible { outline: none; box-shadow: var(--focus-ring)
 }
 .pill--sample {
   background: color-mix(in srgb, var(--warning) 12%, transparent);
-  color: var(--warning);
-  border: 1px solid color-mix(in srgb, var(--warning) 30%, transparent);
+  color: var(--warning-text);
+  border: 1px solid color-mix(in srgb, var(--warning) 45%, transparent);
 }
 
 /* ── Map ────────────────────────────────────────────────────────── */
@@ -513,12 +627,113 @@ input[type="range"]:focus-visible { outline: none; box-shadow: var(--focus-ring)
 }
 .emergency-alert strong { font-size: 16px; }
 .emergency-alert p { color: var(--text-muted); }
+/* Focus target: the alert is scrolled to and focused when it appears, so the
+   next Tab lands on "Call 108" and not back in the textarea. */
+.emergency-alert:focus { outline: none; }
+.emergency-alert:focus-visible { box-shadow: var(--focus-ring); }
+/* Wraps because a mental-health red flag offers two numbers, not one. */
+.emergency-alert__actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+
+/* ═══ Sample data ═══════════════════════════════════════════════════ */
+
+/* Page-level, because per-card pills were too quiet for the one statement
+   with real legal weight: none of these people exist. */
+.sample-banner {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--warning) 10%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--warning) 40%, transparent);
+  color: var(--warning-text);
+}
+.sample-banner p { margin: 0; font-size: 14px; line-height: var(--leading-normal); }
+.sample-banner strong { font-weight: var(--fw-bold); }
 
 
 /* ═══ States ════════════════════════════════════════════════════════ */
 
 .empty-state { text-align: center; color: var(--text-muted); padding: 48px 0; }
 .error-text { color: var(--danger); font-size: 14px; }
+
+/* Route-level error boundary (app/error.tsx). */
+.route-error {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 56px 0;
+  text-align: center;
+  color: var(--text-muted);
+}
+.route-error > svg { color: var(--danger); }
+.route-error h1 {
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: 26px;
+  color: var(--text);
+  margin: 14px 0 10px;
+}
+.route-error p { line-height: var(--leading-normal); margin: 0 0 22px; }
+.route-error__actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.route-error__emergency {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin: 28px 0 0;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  font-size: 14px;
+}
+
+/* A failed search is not an empty one. */
+.load-failure {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 20px;
+  color: var(--danger);
+}
+.load-failure strong { font-size: 16px; }
+
+/* ── Skeletons ──────────────────────────────────────────────────────
+   Shaped like the real card so results don't shift the page when they
+   land. The previous loading state was a single line of text, which
+   measured nothing and reflowed everything. */
+.skeleton-card { pointer-events: none; }
+.skeleton-card + .skeleton-card { margin-top: 14px; }
+.skeleton {
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+}
+.skeleton--avatar { width: 56px; height: 56px; border-radius: var(--radius-pill); flex: none; }
+.skeleton--ring { width: 56px; height: 56px; border-radius: 50%; flex: none; }
+.skeleton--line { margin-bottom: 8px; }
+.doc-card__foot .skeleton--line { margin-bottom: 0; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--surface-2) 25%,
+      color-mix(in srgb, var(--surface-2) 55%, var(--surface)) 37%,
+      var(--surface-2) 63%
+    );
+    background-size: 400% 100%;
+    animation: skeleton-sweep 1.4s ease-in-out infinite;
+  }
+}
+@keyframes skeleton-sweep {
+  from { background-position: 100% 50%; }
+  to   { background-position: 0 50%; }
+}
 
 /* Results cards arrive one-by-one — the single motion moment per view. */
 @media (prefers-reduced-motion: no-preference) {
