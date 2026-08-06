@@ -146,6 +146,74 @@ function scoreDoctor(
  * bidirectional includes() gave a doctor listing "ear infection" a relevance
  * hit on a search routed for "heart".
  */
+/* ═══ Presentation ═══════════════════════════════════════════════════════
+   Everything below turns a score into words. None of it feeds sorting, and
+   nothing here may ever be read by scoreDoctor — a label must be a view of the
+   number, never an input to it.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+export type ScoreBand = "strong" | "good" | "fair" | "limited";
+
+export interface ScoreDescription {
+  band: ScoreBand;
+  /** Short qualitative label, e.g. "Strong". */
+  label: string;
+  /** The signal contributing the largest share of its own maximum. */
+  strongest: { key: keyof ScoreBreakdown; label: string; value: number; max: number };
+}
+
+/**
+ * The highest score actually reachable, which is not 100.
+ *
+ * Condition relevance is `10 + 10 × overlap`, so browsing a department without
+ * having described a symptom caps that component at 10 no matter how good the
+ * doctor is. Banding against a flat 100 would therefore make every doctor look
+ * worse when reached from a department tile than from the symptom box — the
+ * same person, the same credentials, a worse-sounding label, for a reason that
+ * has nothing to do with them.
+ */
+const reachableMax = (hasMatchedConditions: boolean): number =>
+  hasMatchedConditions ? 100 : 90;
+
+/**
+ * Describe a score in words.
+ *
+ * A bare "82" on a card is unanchored: nobody knows whether that is unusually
+ * good or barely adequate, and the ring reads as a proportion of a 100 that is
+ * not attainable. Thresholds are cutoffs on the share of the reachable maximum,
+ * chosen so that "strong" means every verifiable signal is close to full.
+ *
+ * These are a presentation choice, not a measurement. Treat them like the
+ * weights: if they move, bump SCORE_VERSION and record it in ENGINEERING-LOG.md,
+ * because a doctor who was "Strong" yesterday and "Good" today will ask why.
+ */
+export function describeScore(
+  breakdown: ScoreBreakdown,
+  { hasMatchedConditions }: { hasMatchedConditions: boolean }
+): ScoreDescription {
+  const total = SCORE_WEIGHTS.reduce((sum, w) => sum + breakdown[w.key], 0);
+  const share = total / reachableMax(hasMatchedConditions);
+
+  const band: ScoreBand =
+    share >= 0.78 ? "strong" : share >= 0.62 ? "good" : share >= 0.45 ? "fair" : "limited";
+
+  const strongest = SCORE_WEIGHTS.map((w) => ({
+    key: w.key,
+    label: w.label,
+    value: breakdown[w.key],
+    max: w.max,
+  })).reduce((best, cur) => (cur.value / cur.max > best.value / best.max ? cur : best));
+
+  return { band, label: BAND_LABELS[band], strongest };
+}
+
+const BAND_LABELS: Record<ScoreBand, string> = {
+  strong: "Strong",
+  good: "Good",
+  fair: "Fair",
+  limited: "Limited record",
+};
+
 function conditionOverlap(d: Doctor, matchedConditions: string[]): number {
   if (matchedConditions.length === 0) return 0;
 
