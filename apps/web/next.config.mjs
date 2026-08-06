@@ -20,6 +20,78 @@ const nextConfig = {
    * the packages stay debuggable from the app's stack traces.
    */
   transpilePackages: ["@dr-evide/core", "@dr-evide/db"],
+
+  async headers() {
+    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
+  },
 };
+
+/**
+ * Content-Security-Policy.
+ *
+ * `unsafe-inline` on style-src is unavoidable while the pages use inline
+ * `style={{…}}` props, and Next's hydration bootstrap needs `unsafe-inline` on
+ * script-src unless every script gets a per-request nonce. Both are worth
+ * closing later; neither is a reason to ship no policy at all.
+ *
+ * The connect/img/font sources are the complete list of third parties this
+ * product talks to. Anything not named here cannot be reached from the page,
+ * which is the property that matters: an injected script cannot exfiltrate a
+ * symptom description to a host we did not choose.
+ */
+const CSP = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  "object-src 'none'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com data:",
+  // OpenStreetMap raster tiles for the desktop results map.
+  "img-src 'self' data: blob: https://*.tile.openstreetmap.org",
+  "connect-src 'self'",
+  "upgrade-insecure-requests",
+].join("; ");
+
+const SECURITY_HEADERS = [
+  /**
+   * The one header on this list that fixes a live data leak.
+   *
+   * /results and /doctor/[id] carry condition keywords derived from a health
+   * complaint. Every OpenStreetMap tile request — roughly twenty per map view —
+   * and every click through to Google Maps was sending that URL as `Referer` to
+   * a third party. `no-referrer` is deliberately absolute rather than
+   * `same-origin`: there is no case where another host needs to know which page
+   * of this product someone came from.
+   */
+  { key: "Referrer-Policy", value: "no-referrer" },
+
+  { key: "Content-Security-Policy", value: CSP },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "X-Frame-Options", value: "DENY" },
+  {
+    key: "Strict-Transport-Security",
+    value: "max-age=63072000; includeSubDomains; preload",
+  },
+
+  /**
+   * Geolocation stays on — the results page asks for it to rank by real
+   * distance. Everything else is denied outright: a doctor-discovery product
+   * has no reason to reach a camera or a microphone, and saying so explicitly
+   * means a future dependency cannot quietly start.
+   */
+  {
+    key: "Permissions-Policy",
+    value: [
+      "geolocation=(self)",
+      "camera=()",
+      "microphone=()",
+      "payment=()",
+      "usb=()",
+      "interest-cohort=()",
+    ].join(", "),
+  },
+];
 
 export default nextConfig;
