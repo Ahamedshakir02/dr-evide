@@ -1,3 +1,4 @@
+import type { Lang } from "./i18n";
 import type { SpecialtySlug } from "./types";
 
 export type SpecialtyIconKey =
@@ -9,13 +10,28 @@ export type SpecialtyIconKey =
   | "children"
   | "bones";
 
-export interface SpecialtyInfo {
+/**
+ * Department names in Malayalam.
+ *
+ * Kept in a parallel shape rather than replacing the English fields, because
+ * `name` and `description` are also written into the `specialties` table by the
+ * seed script and asserted against it by taxonomy-drift.test.ts. The database
+ * keeps one canonical English row; the interface picks a language.
+ */
+export interface SpecialtyText {
+  name: string;
+  description: string;
+  tileLabel: string;
+}
+
+export interface SpecialtyInfo extends SpecialtyText {
   /** Clinical name — headings, routing copy. */
   name: string;
   description: string;
   /** Plain-language label for the department tiles. */
   tileLabel: string;
   icon: SpecialtyIconKey;
+  ml: SpecialtyText;
 }
 
 /** Key order is tile order on the home screen. */
@@ -25,44 +41,92 @@ export const SPECIALTIES: Record<SpecialtySlug, SpecialtyInfo> = {
     description: "Skin, hair, and nail problems",
     tileLabel: "Skin & Hair",
     icon: "skin",
+    ml: {
+      name: "ത്വക്ക് രോഗ വിഭാഗം",
+      description: "ത്വക്ക്, മുടി, നഖം എന്നിവയുടെ പ്രശ്നങ്ങൾ",
+      tileLabel: "ത്വക്കും മുടിയും",
+    },
   },
   cardiology: {
     name: "Cardiology",
     description: "Heart and circulation problems",
     tileLabel: "Heart",
     icon: "heart",
+    ml: {
+      name: "ഹൃദ്രോഗ വിഭാഗം",
+      description: "ഹൃദയത്തിന്റെയും രക്തയോട്ടത്തിന്റെയും പ്രശ്നങ്ങൾ",
+      tileLabel: "ഹൃദയം",
+    },
   },
   general: {
     name: "General Physician",
     description: "Fever, infections, and everyday illness",
     tileLabel: "General",
     icon: "general",
+    ml: {
+      name: "ജനറൽ ഫിസിഷ്യൻ",
+      description: "പനി, അണുബാധകൾ, സാധാരണ അസുഖങ്ങൾ",
+      tileLabel: "ജനറൽ",
+    },
   },
   dental: {
     name: "Dental",
     description: "Teeth and gum problems",
     tileLabel: "Teeth",
     icon: "teeth",
+    ml: {
+      name: "ദന്ത വിഭാഗം",
+      description: "പല്ലിന്റെയും മോണയുടെയും പ്രശ്നങ്ങൾ",
+      tileLabel: "പല്ല്",
+    },
   },
   ent: {
     name: "ENT",
     description: "Ear, nose, throat, and sinus problems",
     tileLabel: "Ear · Nose",
     icon: "ent",
+    ml: {
+      name: "ചെവി · മൂക്ക് · തൊണ്ട വിഭാഗം",
+      description: "ചെവി, മൂക്ക്, തൊണ്ട, സൈനസ് പ്രശ്നങ്ങൾ",
+      tileLabel: "ചെവി · മൂക്ക്",
+    },
   },
   pediatrics: {
     name: "Pediatrics",
     description: "Illness and growth in children",
     tileLabel: "Children",
     icon: "children",
+    ml: {
+      name: "ശിശുരോഗ വിഭാഗം",
+      description: "കുട്ടികളുടെ അസുഖങ്ങളും വളർച്ചയും",
+      tileLabel: "കുട്ടികൾ",
+    },
   },
   orthopedics: {
     name: "Orthopedics",
     description: "Bones, joints, muscles, and back problems",
     tileLabel: "Bones & Joints",
     icon: "bones",
+    ml: {
+      name: "അസ്ഥിരോഗ വിഭാഗം",
+      description: "എല്ല്, സന്ധി, പേശി, നടുവ് പ്രശ്നങ്ങൾ",
+      tileLabel: "എല്ലും സന്ധിയും",
+    },
   },
 };
+
+/**
+ * A department's text in the reader's language.
+ *
+ * One accessor, so no screen has to remember that the Malayalam lives on a
+ * nested field — and so adding a third language later is a change here rather
+ * than in every component.
+ */
+export function specialtyText(slug: SpecialtySlug, lang: Lang): SpecialtyText {
+  const info = SPECIALTIES[slug];
+  if (lang === "ml") return info.ml;
+  return { name: info.name, description: info.description, tileLabel: info.tileLabel };
+}
 
 export const SPECIALTY_SLUGS = Object.keys(SPECIALTIES) as SpecialtySlug[];
 

@@ -78,6 +78,8 @@ export interface RoutedSpecialty {
 export interface RoutingResult {
   emergency: boolean;
   emergency_message?: string;
+  /** The same instruction in Malayalam. See EmergencyMatch.messageMl. */
+  emergency_message_ml?: string;
   emergency_category?: EmergencyCategory;
   /** Numbers to offer instead of a doctor list. Empty when emergency is false. */
   emergency_helplines?: Helpline[];

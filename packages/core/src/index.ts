@@ -15,6 +15,7 @@
  */
 
 export * from "./types";
+export * from "./i18n";
 export * from "./taxonomy";
 export * from "./text";
 export * from "./emergency";
