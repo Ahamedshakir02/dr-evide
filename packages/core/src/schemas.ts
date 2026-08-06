@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { DEFAULT_LOCATION, DEFAULT_RADIUS_KM, MAX_RADIUS_KM, MIN_RADIUS_KM } from "./geo";
+import { DEFAULT_LOCATION, MAX_RADIUS_KM, MIN_RADIUS_KM, WEB_RADIUS_DEFAULT_KM } from "./geo";
 import { SPECIALTY_SLUGS } from "./taxonomy";
 import type { SpecialtySlug } from "./types";
 
@@ -37,9 +37,9 @@ export const doctorSearchSchema = z.object({
   lng: longitude.default(DEFAULT_LOCATION.lng),
   radius: z.coerce
     .number()
-    .catch(DEFAULT_RADIUS_KM)
+    .catch(WEB_RADIUS_DEFAULT_KM)
     .transform((n) => Math.min(Math.max(n, MIN_RADIUS_KM), MAX_RADIUS_KM))
-    .default(DEFAULT_RADIUS_KM),
+    .default(WEB_RADIUS_DEFAULT_KM),
   conditions: z
     .string()
     .default("")
