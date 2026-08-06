@@ -64,9 +64,28 @@ function evictExpired(now: number): void {
  * anywhere — pairing an IP with a health complaint is exactly the linkage the
  * DPDP Act exists to prevent. It lives only as a map key, in memory, for the
  * length of one window.
+ *
+ * `x-forwarded-for` is a list the client can prepend to. Taking the *first*
+ * entry therefore reads whatever the caller wrote, so a script wanting an
+ * unlimited quota only has to send a new fake IP each request. The trustworthy
+ * entry is the one the nearest proxy appended, counted from the right:
+ *
+ *     X-Forwarded-For: <client-supplied…>, <real client>, <proxy 1>, <proxy 2>
+ *                                           ▲
+ *                                           TRUSTED_PROXY_HOPS = 2
+ *
+ * Set TRUSTED_PROXY_HOPS to the number of proxies you actually run in front of
+ * the app. It defaults to 1, which is right for a single reverse proxy or a
+ * platform edge, and never reads past the start of the list.
  */
 export function callerKey(req: Request): string {
-  const forwarded = req.headers.get("x-forwarded-for");
-  const ip = forwarded?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown";
-  return ip;
+  const hops = Math.max(1, Number(process.env.TRUSTED_PROXY_HOPS ?? 1) || 1);
+
+  const chain = (req.headers.get("x-forwarded-for") ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const trusted = chain.length ? chain[Math.max(0, chain.length - hops)] : undefined;
+  return trusted || req.headers.get("x-real-ip") || "unknown";
 }

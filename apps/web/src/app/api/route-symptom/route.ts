@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { routeSymptomSchema } from "@dr-evide/core";
 import { routeSymptom } from "@/lib/llm-routing";
 import { callerKey, rateLimit } from "@/lib/rate-limit";
+import { count } from "@/lib/telemetry";
 
 /** 20 routings per minute per caller — far above real use, far below a runaway loop. */
 const LIMIT = 20;
@@ -10,6 +11,7 @@ const WINDOW_MS = 60_000;
 export async function POST(req: NextRequest) {
   const { ok, retryAfter } = rateLimit(callerKey(req), LIMIT, WINDOW_MS);
   if (!ok) {
+    count("ratelimit.rejected");
     return NextResponse.json(
       { error: "Too many requests. Please wait a moment and try again." },
       { status: 429, headers: { "retry-after": String(retryAfter) } }

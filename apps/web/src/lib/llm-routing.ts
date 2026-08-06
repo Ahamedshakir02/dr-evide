@@ -9,6 +9,7 @@ import {
   routeByKeywords,
   type RoutingResult,
 } from "@dr-evide/core";
+import { count } from "./telemetry";
 
 /**
  * LLM symptom routing — server-side only.
@@ -111,7 +112,10 @@ function getClient(): Anthropic | null {
 export async function routeSymptom(text: string): Promise<RoutingResult> {
   // 1. Red flags. Local, synchronous, non-negotiable, before anything else.
   const emergency = emergencyResult(text);
-  if (emergency) return emergency;
+  if (emergency) {
+    count("routing.emergency.local");
+    return emergency;
+  }
 
   // 2. The model, when it is configured and behaving.
   const llm = await routeWithLLM(text);
@@ -123,7 +127,10 @@ export async function routeSymptom(text: string): Promise<RoutingResult> {
 
 async function routeWithLLM(text: string): Promise<RoutingResult | null> {
   const anthropic = getClient();
-  if (!anthropic) return null;
+  if (!anthropic) {
+    count("routing.llm.unconfigured");
+    return null;
+  }
 
   try {
     const response = await anthropic.messages.create({
@@ -137,17 +144,24 @@ async function routeWithLLM(text: string): Promise<RoutingResult | null> {
     // Refusals and truncation both leave us without usable output. Neither is
     // an error worth surfacing — fall through to keywords.
     if (response.stop_reason === "refusal" || response.stop_reason === "max_tokens") {
+      count("routing.llm.incomplete");
       return null;
     }
 
     const raw = response.content.find((block) => block.type === "text")?.text;
-    if (!raw) return null;
+    if (!raw) {
+      count("routing.llm.incomplete");
+      return null;
+    }
 
     // The model is untrusted input. Anything that does not match the schema is
     // discarded rather than reshaped, and unknown slugs are dropped inside the
     // schema's transform so one bad department does not cost the user a good one.
     const parsed = llmRoutingSchema.safeParse(JSON.parse(raw));
-    if (!parsed.success) return null;
+    if (!parsed.success) {
+      count("routing.llm.invalid");
+      return null;
+    }
 
     const { emergency, specialties, matched_conditions } = parsed.data;
 
@@ -155,9 +169,11 @@ async function routeWithLLM(text: string): Promise<RoutingResult | null> {
     // the model in the cautious direction only: re-run the red-flag path so the
     // user gets the same vetted message and helplines, never a model-authored one.
     if (emergency) {
+      count("routing.llm.emergency_backstop");
       return {
         emergency: true,
         emergency_message: EMERGENCY_BACKSTOP_MESSAGE,
+        emergency_message_ml: EMERGENCY_BACKSTOP_MESSAGE_ML,
         emergency_category: "medical",
         emergency_helplines: [{ label: "108 — free ambulance", number: "108" }],
         specialties: [],
@@ -166,8 +182,12 @@ async function routeWithLLM(text: string): Promise<RoutingResult | null> {
       };
     }
 
-    if (specialties.length === 0) return null;
+    if (specialties.length === 0) {
+      count("routing.llm.invalid");
+      return null;
+    }
 
+    count("routing.llm.ok");
     return {
       emergency: false,
       specialties: specialties.map((s) => ({
@@ -181,14 +201,21 @@ async function routeWithLLM(text: string): Promise<RoutingResult | null> {
     };
   } catch {
     // Timeout, rate limit, network failure, malformed JSON — all the same
-    // outcome from the user's point of view. Deliberately swallowed without
-    // logging: the request body is the user's symptom text.
+    // outcome from the user's point of view. Still swallowed without logging,
+    // because the request body is the user's symptom text — but counted, so a
+    // key that expired at 3am is visible before someone notices the routing has
+    // quietly been keyword-only for a week. The counter carries no payload; see
+    // lib/telemetry.ts.
+    count("routing.llm.error");
     return null;
   }
 }
 
 const EMERGENCY_BACKSTOP_MESSAGE =
   "These symptoms may be a medical emergency. Please go to the nearest emergency department immediately or call 108 (free ambulance). Do not wait for an appointment.";
+
+const EMERGENCY_BACKSTOP_MESSAGE_ML =
+  "ഈ ലക്ഷണങ്ങൾ ഒരു അടിയന്തര വൈദ്യസഹായം ആവശ്യമുള്ളതാകാം. ഉടൻ തന്നെ അടുത്തുള്ള അത്യാഹിത വിഭാഗത്തിലേക്ക് പോകുക, അല്ലെങ്കിൽ 108 (സൗജന്യ ആംബുലൻസ്) വിളിക്കുക. അപ്പോയിന്റ്മെന്റിനായി കാത്തിരിക്കരുത്.";
 
 function defaultReason(slug: keyof typeof SPECIALTIES): string {
   return `This is usually treated by a ${SPECIALTIES[slug].name} (${SPECIALTIES[slug].description.toLowerCase()}).`;
