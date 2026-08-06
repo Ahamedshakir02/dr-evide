@@ -26,6 +26,10 @@ npm run db:seed               # seeds specialties + sample doctors
 npm run dev
 ```
 
+`TRUSTED_PROXY_HOPS` — set to the number of proxies in front of the app (default 1).
+The rate limiter reads `x-forwarded-for` from the right by that many hops; reading the
+first entry would take whatever the caller wrote.
+
 ## Optional: LLM symptom routing
 
 Set `ANTHROPIC_API_KEY` in `apps/web/.env.local` to enable free-text routing via Claude.
@@ -40,6 +44,12 @@ it** — a red flag must not depend on a network call or an API key.
    Triage only, never diagnosis. Emergency red flags short-circuit to "call 108".
 2. **Search** (`/api/doctors`) — doctors of that specialty within the chosen radius
    (PostGIS `ST_DWithin`, or Haversine on sample data).
+   Neither the routed conditions nor the user's coordinates travel in the URL — they
+   live in `sessionStorage` (`apps/web/src/lib/search-context.ts`). A query string
+   lands in browser history on a shared phone, in every proxy access log, and in the
+   `Referer` header sent to the map tile server. `Referrer-Policy: no-referrer` closes
+   the last of those outright.
+
 3. **TrustScore ranking** (`packages/core/src/ranking.ts`) — 0–100, weights:
    qualification depth (30, NMC-verified), experience (15), review quality ×
    authenticity (25), condition relevance (20), accessibility (10). Distance is a
@@ -76,6 +86,32 @@ Both apps come from the same design bundle: `Dr Evide Web.dc.html` is the websit
 the ranking, taxonomy, and type modules in both, which meant the same doctor could score
 differently in the app and on the site. If both apps need it, it belongs in `packages/core`.
 
+## Languages
+
+The **website** is available in English and Malayalam (`packages/core/src/i18n.ts`),
+toggled in the top bar and remembered per browser. The **mobile app is still
+English-only** — the strings are in core, the wiring is not. Department names carry an `ml`
+block in `taxonomy.ts`; the English `name`/`description` remain canonical because
+they are what the `specialties` table stores.
+
+**The Malayalam has not yet been reviewed by a native speaker.** It must be before
+launch — a mistranslation in the emergency copy is the one bug here that can cost a
+life.
+
+## Health and observability
+
+`GET /api/health` returns liveness, whether the app is on sample data, the active
+`SCORE_VERSION`, and a set of counters.
+
+The counters are names and integers only — `apps/web/src/lib/telemetry.ts` cannot
+record a payload, by construction. They exist because the LLM routing fallback is
+deliberately silent about *content* (the request body is the user's symptom text)
+and was accidentally silent about *fact*: an expired API key would drop every user
+to keyword routing with nothing anywhere saying so.
+
+Per-instance and reset on deploy, like the rate limiter. Point them at a real sink
+before running more than one instance.
+
 ## Commands
 
 ```bash
@@ -106,6 +142,15 @@ changes a TrustScore number or an emergency red flag must be recorded there.**
 - Legal review: medical disclaimer, DPDP Act 2023 (symptom text = sensitive personal data),
   defamation exposure on rankings.
 - Google Places ToS compliance if importing review data.
+- **The mobile app is English-only**, including the full-screen emergency interrupt.
+- **The Malayalam interface strings are unreviewed.** A native speaker must check them,
+  starting with the emergency copy.
+- `manifest.json` has no icons, so the PWA cannot be installed — the thing that matters
+  most on the low-end Android that dominates the launch area.
+- No `robots.txt`, `sitemap.ts`, per-doctor metadata or `Physician` structured data.
+  Every profile currently shares one title and cannot rank for anything.
+- Nothing outside `packages/core` has tests — including the untrusted-model parser in
+  `llm-routing.ts`, which is the riskiest code in the repo.
 - The `/api/route-symptom` rate limiter is **in-process** — per-instance, resets on deploy,
   and useless against a distributed caller. Move it to Redis before running more than one
   instance.

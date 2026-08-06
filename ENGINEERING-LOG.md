@@ -316,3 +316,245 @@ Runtime, against a live dev server (not just the build):
   distributed caller. Move to Redis before running more than one instance.
 - Not done in this pass: the ~69 inline `style={{}}` blocks that bypass the design
   system in `apps/web/src/styles/ds/`, and native review/profile-claiming (v1.5).
+
+---
+
+## v0.3 — privacy, failure states, and reading the result (Aug 2026)
+
+A review pass over v0.2. The core was not the problem: `packages/core` as one source
+of truth, pure scoring, the golden tests and the integrity gate all held up. What
+was missing was the ring around it — the app had no error paths, no security
+headers, health data reached third parties through URLs, and the interface failed
+contrast for the people it was built for.
+
+**Nothing in this pass changes a TrustScore number or an emergency red flag.**
+`SCORE_VERSION` stays at `1.0.0` and the golden tests are untouched. The one
+addition to `ranking.ts` (`describeScore`) is presentation-only and never feeds the
+sort — but it carries documented thresholds, so it is versioned with the weights.
+
+### 1. Condition keywords no longer travel in the URL
+
+`/api/route-symptom` was careful with symptom text — classified in memory, never
+persisted, never logged, `no-store` — and then the routed keywords went into a
+query string:
+
+```
+/results?specialty=cardiology&conditions=chest+pain
+```
+
+Which put them in browser history on a phone that is often shared, in the access
+log of every proxy in front of the app, and in the `Referer` header of all ~20
+OpenStreetMap tile requests the results map fires per view, plus every click
+through to Google Maps.
+
+Two fixes, in order of how fast they stop the bleeding:
+
+- `Referrer-Policy: no-referrer` in `next.config.mjs`, which closes the
+  third-party leak immediately and absolutely.
+- `apps/web/src/lib/search-context.ts` — the search (conditions, radius,
+  coordinates) now lives in `sessionStorage`. The cost is shareable result links,
+  which is the right trade: a URL that reproduces someone's symptom search is not
+  a link they should be able to send by accident.
+
+The doctor profile was server-rendering its score from those query parameters, so
+`ProfileScore` and `ClinicDistance` are now client components. That is a smaller
+change than it looks — scoring is pure, so `scoreOne` produces the same number in
+the browser that it produces in the API route, from the same inputs.
+
+### 2. A dropped connection is no longer reported as "no doctors"
+
+The results fetch had a `finally` but no `catch`. On a failed request `data` stayed
+null and the page rendered "No Dermatology doctors within 5 km." On rural mobile
+data that was the common path, and telling someone unwell that nobody is nearby
+when the request never landed is the worst failure this product can produce.
+
+There is now an explicit `LoadError` of `"offline" | "server"`, a retry, and copy
+that says plainly it does not mean there are no doctors nearby. `!res.ok` is
+handled separately from a thrown request.
+
+Also added: `app/error.tsx`, `app/global-error.tsx`, `app/not-found.tsx`, and a
+profile `loading.tsx`. There was no boundary anywhere, so a `getDoctor()` throw —
+and the pool has a 5s statement timeout precisely because that happens — rendered
+Next's own stack-trace page, with no way back and no mention of 108. Both error
+screens carry the 108 number; that must work on every screen, including a broken
+one. A missing doctor is now a real 404 rather than "Doctor not found." with a 200.
+
+### 3. Contrast
+
+`--text-faint` (`#938F84`) measured **3.1:1** on `--bg`, under the 4.5:1 AA needs
+for body text. It renders the medical disclaimer, the `108` number, the "not yet
+verified" credential note, and the symptom-box hint. `--warning` as text on its own
+12% tint measured **2.7:1** — the "Sample data" pill, i.e. the marker saying these
+people are not real.
+
+Both stepped down the same ramps to 5.1:1 and 6.9:1, in `apps/web/src/styles/theme.css`
+and `apps/mobile/src/theme.ts` identically, so a card reads the same in both.
+
+### 4. Radius constants had drifted into three files
+
+| Where | MIN | DEFAULT | MAX |
+|---|---|---|---|
+| `core/geo.ts` | 1 | **15** | 100 |
+| web `RadiusControl` | 1 | **5** | 25 |
+| mobile `results.tsx` / `api.ts` | 1 | **5** | 25 |
+
+The web slider opened at 5km while `doctorSearchSchema` defaulted to 15km, so a
+bare API call and the same search through the UI returned different result sets.
+Now one definition in `geo.ts`, with the two platform defaults stated once
+(`WEB_RADIUS_DEFAULT_KM`, `MOBILE_RADIUS_DEFAULT_KM`). `MAX_RADIUS_KM` dropped
+100 → 25: nothing in either app could ask for more, so the only caller a 100km
+ceiling served was an anonymous one pointing a radius scan at the database.
+
+### 5. The mobile app now asks where you are
+
+Every mobile screen passed `DEFAULT_LOCATION`, so "near you" meant "near Edappal
+town centre". Not only wording: the nearness term inside `accessibility` (10 points)
+is measured from the search origin, so the website and the app could produce
+different scores for the same doctor — the exact divergence `packages/core` exists
+to prevent.
+
+`apps/mobile/src/lib/location.ts` wraps `expo-location`, caches per session so the
+list and the profile measure from the same origin, and falls back to Edappal on
+every failure path. Nobody is blocked from finding a doctor for declining to share
+their location, and the results screen says when distances are approximate.
+
+**Requires `npm install`** — `expo-location` is a new dependency, and the Android
+permissions were already declared in `app.json`.
+
+### 6. `LIMIT 200` truncated by distance, before ranking by score
+
+Candidates were cut by distance and then ranked by TrustScore, so past 200
+candidates the highest-scoring doctor in the radius could be dropped for being
+marginally farther than the cut — directly against "distance is a filter and a
+tiebreaker, not a quality signal". Raised to 2,000 and named
+`SEARCH_CANDIDATE_CAP` with the reasoning attached. Latent at current data volume;
+a correctness bug the day real data lands.
+
+### 7. Observability without payloads
+
+The LLM fallback was deliberately silent:
+
+```ts
+} catch { return null; }   // timeout, 429, network, bad JSON — all the same
+```
+
+Swallowing the content is right; the body is the user's symptom text. Swallowing
+the fact is not — if the key expires, every user silently drops to keyword routing
+and nothing says so.
+
+`apps/web/src/lib/telemetry.ts` counts names and integers and **physically cannot
+record a payload**: `count()` takes no free-text argument and the label type is a
+closed union. Exposed at `/api/health`, along with whether the app is serving
+sample data. In-process like the rate limiter, and honest about it.
+
+Also: `/api/doctors` gained a rate limit (60/min — looser than routing, because
+dragging the slider legitimately bursts) and `cache-control: private, max-age=30`.
+`callerKey` now counts `x-forwarded-for` from the right via `TRUSTED_PROXY_HOPS`;
+reading the first entry took whatever the caller wrote, so any script could mint a
+fresh quota per request. The `pg` pool moved onto `globalThis`, because Next's dev
+server was opening ten more connections on every save.
+
+### 8. Reading the result
+
+- **TrustScore was unanchored.** A bare "74" says nothing about whether that is
+  good, and the ring reads as a share of a 100 that is not reachable — browsing a
+  department without describing a symptom caps `condition_relevance` at 10, so the
+  ceiling is 90, not 100. `describeScore` bands against the *reachable* maximum, so
+  the same doctor does not look worse for having been reached from a tile. Each
+  card also names its strongest signal, so a number is never the only
+  justification on screen.
+- **Sample data is now a page-level banner**, not a 24px pill. The API had returned
+  `sample_data: true` all along; the UI never rendered it. This is the clearest
+  legal exposure in the product and it was the quietest thing on the page.
+- **Skeletons** shaped like the real card, replacing a one-line "Finding doctors…"
+  that measured nothing and reflowed the page on every search.
+- **The empty state offers the widen** instead of describing it.
+- **The emergency alert scrolls into view and takes focus.** On a phone it rendered
+  below a textarea, a hint row and a 58px button, so the most important message in
+  the product could be off-screen. It also renders the helplines the match carried,
+  so a mental-health flag offers Tele-MANAS first rather than an ambulance.
+- Skip link, a real `<label>` on the symptom box, 44px back link, `aria-live` on
+  the result count.
+
+### 9. Malayalam interface
+
+The taxonomy carried full Malayalam and Manglish keyword sets — so someone could
+type `മുടി കൊഴിച്ചിൽ`, be routed correctly, and land on a page reading
+"Dermatology near you · TrustScore · NMC verified". The input was bilingual and the
+output was not, which meant the people the Malayalam matcher was built for were the
+ones least able to read the result.
+
+`packages/core/src/i18n.ts` holds the strings — in core, not the web app, because
+both apps will show them. **Only the website is wired up in this pass.** The mobile
+app still renders English, including the full-bleed emergency screen, which is the
+highest-stakes copy in the product and is mobile-only. The strings it needs are
+already in core; what is missing is a language control and the wiring. That is the
+next thing to do, and it should not wait long. Departments gained an `ml` block in `taxonomy.ts` (parallel,
+not replacing: the English `name`/`description` are what the seed writes to the
+`specialties` table and what `taxonomy-drift.test.ts` asserts). Emergency copy
+carries `messageMl` through `EmergencyMatch` and `RoutingResult`.
+
+The toggle is two labelled buttons rather than a select, and the choice is
+remembered in `localStorage` and applied to `document.documentElement.lang` — which
+decides which voice a screen reader uses, so Malayalam under `lang="en"` would be
+worse than not translating at all.
+
+**The Malayalam has not been reviewed by a native speaker.** It must be before
+launch. A mistranslation in the emergency copy is the one bug in this product that
+can cost a life.
+
+### Verification at time of writing
+
+What was actually run, and what was not. This matters more than usual: the
+environment this pass was done in could not execute most of the toolchain — the
+repository was mounted over a slow network filesystem, and `node_modules` had been
+installed on Windows, so the native `rollup` binary vitest needs does not load on
+Linux. `tsc` and `eslint` over the mount did not finish inside the time available.
+
+Run, and passing:
+
+- `npm run check:integrity` — 12 patterns, 0 violations
+- `packages/core` typecheck (`tsc --noEmit -p packages/core/tsconfig.json`) — clean
+- A TypeScript parse of all 48 changed and added `.ts`/`.tsx` files — no syntax errors
+
+**Not run:** `npm test`, `npm run lint`, `npm run build`, and the `apps/web` and
+`apps/mobile` typechecks. No dev server was started, no page was loaded, no API
+response was inspected — the v0.2 runtime table above has **not** been re-run.
+
+**Run `npm install && npm run verify` before trusting this diff**, and redo the
+runtime checks. `npm install` is required regardless: `expo-location` is new.
+
+Worth exercising by hand, because these are behaviour changes rather than refactors:
+
+| Check | Expected |
+|---|---|
+| Search from the symptom box, then read the URL | `/results?specialty=…` only — no `conditions`, no `lat`/`lng` |
+| Open a doctor from that list | The ring shows the same number as the card |
+| Open that same doctor URL in a fresh tab | Renders, using the no-context defaults |
+| DevTools → Network → any map tile request | No `Referer` header |
+| Kill the network, then drag the radius | "We couldn't reach the service" and a retry — **not** "No doctors within N km" |
+| A department with nobody in range | The widen button appears, and works |
+| `GET /api/health` | `sample_data`, `score_version`, counters; 503 when the DB is down |
+| Type a red flag on a narrow viewport | The alert scrolls into view and takes focus |
+| Switch to മലയാളം | Survives a reload; `<html lang>` becomes `ml` |
+| Mobile, first launch | Location prompt; declining still returns results |
+
+### Still open
+
+- **Malayalam review by a native speaker.** Blocking.
+- **The mobile app is still English-only**, emergency screen included. The strings
+  exist in core; the app needs a toggle and the wiring.
+- SEO and structured data (P3, deliberately not in this pass): no `robots.txt`,
+  no `sitemap.ts`, no `generateMetadata` on profiles, no `Physician` JSON-LD. Every
+  doctor page still shares one title, so none of them can rank for
+  "dermatologist near Edappal".
+- `manifest.json` still has `"icons": []`, so the PWA cannot be installed — which
+  matters most on the low-end Android that dominates the launch area.
+- No tests outside `packages/core`. The API routes, the HTTP-level zod boundaries,
+  the rate limiter's window behaviour and the LLM fallback chain are all untested,
+  and the untrusted-model parser is the riskiest code in the repo.
+- The rate limiter and the telemetry counters are both in-process. Redis before a
+  second instance.
+- CSP still carries `unsafe-inline` for scripts and styles: styles because the
+  pages use inline `style={{}}`, scripts because Next's bootstrap needs a nonce
+  otherwise. Both worth closing; neither a reason to have shipped no policy.
