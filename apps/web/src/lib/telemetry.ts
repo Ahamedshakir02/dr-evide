@@ -42,7 +42,13 @@ export type Counter =
   /** A local red flag short-circuited before the model was ever called. */
   | "routing.emergency.local"
   /** A caller was turned away by the rate limiter. */
-  | "ratelimit.rejected";
+  | "ratelimit.rejected"
+  /** A launch-notification address was written (or was already there). */
+  | "notify.stored"
+  /** Someone asked to be notified on a deployment with no database to hold it. */
+  | "notify.unconfigured"
+  /** The insert threw. Worth an alert: the form is promising an email nobody will send. */
+  | "notify.failed";
 
 const counters = new Map<Counter, number>();
 
