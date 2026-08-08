@@ -84,12 +84,21 @@ a:hover { color: var(--accent-hover); }
 }
 
 /* ── Top-bar nav ────────────────────────────────────────────────────
-   Landing-page sections, reachable from every page. Hidden below 760px
-   rather than folded into a hamburger: they point at parts of a page
-   you can simply scroll, and the one control that must never be behind
-   a menu — "Find a doctor" — is the button beside them, which stays. */
+   Landing-page sections, reachable from every page. Hidden on narrow
+   screens rather than folded into a hamburger: they point at parts of
+   a page you can simply scroll, and the one control that must never be
+   behind a menu — "Find a doctor" — is the button beside them, stays.
+
+   Two breakpoints, because the two languages are not the same width.
+   Measured in the browser with the real faces loaded, the bar needs
+   840px of content in English and 961px in Malayalam — the labels are
+   longer and so is the "Find a doctor" button. It first shipped at a
+   single 760px, which fit neither: the whole document scrolled
+   sideways from 760-840px in English, and across a 200px band in
+   Malayalam. Tuning one number to English would have left Malayalam
+   broken, which is the wrong language to break in this product. */
 .topbar__nav { display: none; }
-@media (min-width: 760px) {
+@media (min-width: 860px) {
   .topbar__nav {
     display: flex;
     align-items: center;
@@ -109,6 +118,13 @@ a:hover { color: var(--accent-hover); }
   }
   .topbar__nav a:hover { color: var(--text); background: var(--surface-2); }
   .topbar__nav a:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+}
+/* Malayalam needs the extra 120px. LangProvider already writes the
+   choice to <html lang> — it has to, so a screen reader picks the right
+   voice — so the stylesheet can read it and no JS measures anything. */
+html[lang="ml"] .topbar__nav { display: none; }
+@media (min-width: 980px) {
+  html[lang="ml"] .topbar__nav { display: flex; }
 }
 .topbar__cta { height: 38px; }
 
