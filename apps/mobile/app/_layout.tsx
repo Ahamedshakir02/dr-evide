@@ -9,6 +9,7 @@ import {
   JetBrainsMono_700Bold,
 } from "@expo-google-fonts/jetbrains-mono";
 import { NotoSansMalayalam_600SemiBold } from "@expo-google-fonts/noto-sans-malayalam";
+import { LangProvider } from "../src/lib/lang";
 import { color } from "../src/theme";
 
 SplashScreen.preventAutoHideAsync();
@@ -44,7 +45,7 @@ export default function RootLayout() {
   if (!loaded && !error) return null;
 
   return (
-    <>
+    <LangProvider>
       <StatusBar style="dark" />
       <Stack
         screenOptions={{
@@ -54,12 +55,14 @@ export default function RootLayout() {
         }}
       >
         {/* The emergency screen is an interrupt, not a destination — it comes
-            up from the bottom and owns the whole field. */}
+            up from the bottom and owns the whole field. It renders both
+            languages itself rather than reading the provider, so it is
+            correct even before anyone has chosen one. */}
         <Stack.Screen
           name="emergency"
           options={{ animation: "slide_from_bottom", gestureEnabled: false }}
         />
       </Stack>
-    </>
+    </LangProvider>
   );
 }
