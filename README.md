@@ -13,8 +13,34 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000. With no database configured, the app runs on bundled **sample data**
-(fictional doctors, marked "Sample data" in the UI).
+Open http://localhost:3000 for the landing page, or http://localhost:3000/find to go
+straight to the search. With no database configured, the app runs on bundled **sample
+data** (fictional doctors, marked "Sample data" in the UI).
+
+## The website has two jobs
+
+`/` is the **public face**: what Dr Evide is, what the app does, how ranking works,
+and where to get it. `/find` is the **product**: the symptom box, the departments,
+and everything downstream of them.
+
+They were one page until v0.4, which served exactly one reader — someone already
+unwell and already convinced. A doctor deciding whether to be listed, or anyone
+deciding whether to trust a ranking of named physicians, got a card in the corner of
+a search form.
+
+Two properties keep the landing page from becoming marketing:
+
+- **Every number on it is read from the code that produces it.** The TrustScore
+  weights come from `SCORE_WEIGHTS`, their labels and the disclaimer from core's
+  `i18n`. A claim about how ranking works cannot drift from how ranking works.
+- **Nothing on it is a promise the repo does not keep.** The store badges are disabled
+  spans rather than links, because neither app is published. The "none of these
+  doctors are real" line in the footer is gated on `isSampleMode()` — it removes
+  itself when a real database is configured.
+
+Landing copy lives in `apps/web/src/lib/site-copy.ts` rather than in core, because the
+app has no landing page. See the file's header for why that is not a hole in the
+one-copy rule.
 
 ## With a real database (Postgres + PostGIS)
 
@@ -29,6 +55,15 @@ npm run dev
 `TRUSTED_PROXY_HOPS` — set to the number of proxies in front of the app (default 1).
 The rate limiter reads `x-forwarded-for` from the right by that many hops; reading the
 first entry would take whatever the caller wrote.
+
+`NEXT_PUBLIC_SITE_URL` — the public origin. `robots.txt`, `sitemap.xml` and the
+canonical links need absolute URLs and cannot infer one from the request. Defaults to
+`http://localhost:3000` rather than a guessed production domain: a sitemap pointing at
+a hostname we do not control is worse than one that is obviously wrong in development.
+
+`NEXT_PUBLIC_CONTACT_EMAIL` — shown as the fallback when the launch-notification list
+has no database behind it. Leave it blank and no address is rendered at all, which is
+better than a `mailto:` to a mailbox nobody reads.
 
 ## Optional: LLM symptom routing
 
@@ -74,6 +109,9 @@ packages/core/      taxonomy, emergency red flags, routing, TrustScore, geo,
 packages/core/test/ golden score tests + the emergency safety corpus
 packages/db/        schema.sql, doctor query layer, setup/seed scripts
 apps/web/           Next.js — pages, API routes, design system. No scoring logic.
+  src/app/          / landing · /find search · /results · /doctor/[id] · api/ · robots · sitemap
+  src/components/landing/   landing-only components (phone mocks, store badges, notify)
+  src/lib/site-copy.ts      landing copy, en + ml, web-only by design
 apps/mobile/        Expo — imports core, never re-implements it
 scripts/            check-no-paid-ranking.mjs (CI integrity gate)
 dr-evide-doctor-discovery/   design handoff bundle (reference, not built)
@@ -88,15 +126,17 @@ differently in the app and on the site. If both apps need it, it belongs in `pac
 
 ## Languages
 
-The **website** is available in English and Malayalam (`packages/core/src/i18n.ts`),
-toggled in the top bar and remembered per browser. The **mobile app is still
-English-only** — the strings are in core, the wiring is not. Department names carry an `ml`
-block in `taxonomy.ts`; the English `name`/`description` remain canonical because
-they are what the `specialties` table stores.
+The **website** is available in English and Malayalam — the product strings in
+`packages/core/src/i18n.ts`, the landing page's own copy in
+`apps/web/src/lib/site-copy.ts` — toggled in the top bar and remembered per browser.
+The **mobile app is still English-only** — the strings are in core, the wiring is not.
+Department names carry an `ml` block in `taxonomy.ts`; the English `name`/`description`
+remain canonical because they are what the `specialties` table stores.
 
 **The Malayalam has not yet been reviewed by a native speaker.** It must be before
 launch — a mistranslation in the emergency copy is the one bug here that can cost a
-life.
+life. That applies to `site-copy.ts` too, though nothing on the landing page is
+load-bearing for safety: the red flags live on `/find`, in core's strings.
 
 ## Health and observability
 
@@ -115,7 +155,7 @@ before running more than one instance.
 ## Commands
 
 ```bash
-npm run dev          # web app on :3000
+npm run dev          # web app on :3000 (landing at /, search at /find)
 npm run mobile       # Metro for the mobile dev client
 npm test             # 109 tests — ranking goldens + emergency corpus
 npm run typecheck    # all four workspaces
@@ -147,8 +187,15 @@ changes a TrustScore number or an emergency red flag must be recorded there.**
   starting with the emergency copy.
 - `manifest.json` has no icons, so the PWA cannot be installed — the thing that matters
   most on the low-end Android that dominates the launch area.
-- No `robots.txt`, `sitemap.ts`, per-doctor metadata or `Physician` structured data.
-  Every profile currently shares one title and cannot rank for anything.
+- **The store badges on `/` are placeholders.** They are deliberately inert until the
+  apps are published; wire them up in `site-copy.ts` and `StoreBadges.tsx` at the same
+  time, or the page starts overstating.
+- **`/api/notify` needs somewhere to send from.** The addresses land in
+  `launch_notifications` and nothing reads that table yet. A list nobody emails is a
+  promise nobody keeps.
+- `robots.ts` and `sitemap.ts` exist and `/` and `/find` have their own titles, but
+  there is still **no per-doctor metadata and no `Physician` structured data** — every
+  profile shares one title and cannot rank for anything.
 - Nothing outside `packages/core` has tests — including the untrusted-model parser in
   `llm-routing.ts`, which is the riskiest code in the repo.
 - The `/api/route-symptom` rate limiter is **in-process** — per-instance, resets on deploy,

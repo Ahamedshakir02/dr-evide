@@ -12,6 +12,74 @@ Rules for this file:
 
 ---
 
+## 2026-08-07 — the website splits in two: a landing page at `/`, the search at `/find`
+
+**Problem.** The website was a second copy of the app. `/` was the symptom box, and
+that was the whole site. It worked for exactly one reader — someone already unwell,
+already convinced, who wanted a doctor now. It had nothing for the other reader: a
+doctor deciding whether to be listed, anyone deciding whether to trust a ranking of
+named physicians, anyone arriving from a shared link. That reader's questions — what
+is this, who ranks whom, on what basis, where do I get it — were answered by a
+`sh-card` in the corner of a search form, if at all.
+
+**Change.** The search moved to `/find` unchanged, and `/` became the product's
+public face: hero, three-step explanation, six feature cards covering what the app
+actually does, the four app screens, the TrustScore weights, downloads, FAQ.
+
+**Two rules keep the marketing page honest.**
+
+1. *Every number on it is read from the code that produces it.* The weights come from
+   `SCORE_WEIGHTS`, their labels from core's `i18n`, the disclaimer and the pledge
+   from core's `Strings`. A claim on this page about how ranking works cannot drift
+   away from how ranking works, because it is the same value.
+2. *No claim the repo does not keep.* The store badges are `aria-disabled` spans, not
+   links, because neither app is published — a badge that looks live and goes nowhere
+   costs more than the two stores are worth on a page arguing that we do not overstate
+   things. The footer's "none of these people are real" line is gated on
+   `isSampleMode()` resolved on the server, so it removes itself the day a real
+   database is configured rather than waiting for someone to remember.
+
+**The integrity gate fired, and the copy moved rather than the gate.**
+`check-no-paid-ranking.mjs` rejected two sentences *promising we would never do paid
+placement*, because they contained the word the checker bans. Widening the checker to
+understand context was rejected outright: a checker that can tell prose from a field
+is a checker that can be argued with, and "it's only in a string" is precisely the
+argument a paid-placement field would arrive wearing. The sentences were reworded. The
+script's docstring, which claimed prose did not fire, was corrected — it does.
+
+**Landing copy lives in `apps/web/src/lib/site-copy.ts`, not in core.** This is not a
+hole in the one-copy rule. Core exists for what *both* apps show; the app has no
+landing page, no feature tour, and no reason to describe itself to someone who has
+already installed it. Putting it in core would make the mobile bundle carry strings it
+can never render and put a marketing claim one import away from the ranking function.
+The product strings the page reuses are still read from core.
+
+**Also changed.**
+
+- `skipToResults` → `skipToContent` in core's `Strings`. The skip link is on every
+  page, and on a landing page there are no results to skip to — it was telling a
+  keyboard user there were.
+- `manifest.json` `start_url` → `/find`. Someone who installs the PWA wants the
+  search, not the pitch.
+- `robots.ts` and `sitemap.ts` added — the first robots.txt this project has had. Both
+  disallow `/results`, which reads its context from `sessionStorage` and therefore
+  renders the empty state when crawled cold; indexing it would put a page in search
+  results that is blank for everyone who clicks it.
+- `metadata.title` became a template. Every page shared one title before, so a
+  doctor's profile and the front page were indistinguishable in a search result.
+- `/api/notify` and a `launch_notifications` table: the only place this product stores
+  a contact detail. It answers 503 when there is no database rather than accepting an
+  address into memory — a list that evaporates on the next deploy would take an
+  address, promise an email, and silently never send one. The form shows that as an
+  apology, not a green tick.
+
+**Rejected.** Removing the search from the website (the app is not published, so the
+site is the only working Dr Evide there is). One long page with the pitch above the
+symptom box (it puts a marketing scroll between someone unwell and the one control
+they came for).
+
+---
+
 ## 2026-07-22 — mobile moves off Expo Go to a development build
 
 **Problem.** Expo Go refused to open the project: *"This project requires a newer
