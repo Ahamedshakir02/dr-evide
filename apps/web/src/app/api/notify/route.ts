@@ -27,7 +27,7 @@ const EMAIL = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/;
 const MAX_EMAIL_LENGTH = 254; // RFC 5321 path limit.
 
 export async function POST(req: NextRequest) {
-  const { ok, retryAfter } = rateLimit(`notify:${callerKey(req)}`, LIMIT, WINDOW_MS);
+  const { ok, retryAfter } = await rateLimit(`notify:${callerKey(req)}`, LIMIT, WINDOW_MS);
   if (!ok) {
     count("ratelimit.rejected");
     return NextResponse.json(

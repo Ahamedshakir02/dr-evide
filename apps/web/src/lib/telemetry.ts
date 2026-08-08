@@ -43,6 +43,12 @@ export type Counter =
   | "routing.emergency.local"
   /** A caller was turned away by the rate limiter. */
   | "ratelimit.rejected"
+  /**
+   * The shared rate-limit store was unreachable and the in-process one took
+   * over. Worth an alert on more than one instance: the limit is still being
+   * applied, but per replica rather than across them.
+   */
+  | "ratelimit.degraded"
   /** A launch-notification address was written (or was already there). */
   | "notify.stored"
   /** Someone asked to be notified on a deployment with no database to hold it. */

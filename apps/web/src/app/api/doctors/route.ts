@@ -20,7 +20,7 @@ const LIMIT = 60;
 const WINDOW_MS = 60_000;
 
 export async function GET(req: NextRequest) {
-  const { ok, retryAfter } = rateLimit(`doctors:${callerKey(req)}`, LIMIT, WINDOW_MS);
+  const { ok, retryAfter } = await rateLimit(`doctors:${callerKey(req)}`, LIMIT, WINDOW_MS);
   if (!ok) {
     count("ratelimit.rejected");
     return NextResponse.json(

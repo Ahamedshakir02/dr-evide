@@ -211,8 +211,8 @@ before running more than one instance.
 ```bash
 npm run dev          # web app on :3000 (landing at /, search at /find)
 npm run mobile       # Metro for the mobile dev client
-npm test             # 184 tests — ranking goldens, emergency corpus, i18n parity,
-                     #             and the untrusted-model parser in llm-routing.ts
+npm test             # 249 tests — ranking goldens, emergency corpus, i18n parity, the
+                     #             untrusted-model parser, structured data, rate limiting
 npm run typecheck    # all four workspaces
 npm run check:integrity   # fails if a paid-placement field appears
 npm run icons        # redraws the app icons from assets/brand/mark.svg
@@ -262,12 +262,15 @@ changes a TrustScore number or an emergency red flag must be recorded there.**
   `noindex` and emit no markup at all**, and profiles enter `sitemap.xml` only when
   `is_sample` is false — so none of this publishes anything until the data is real.
   No `aggregateRating` is emitted, deliberately; see the file header for why.
-- `llm-routing.ts` now has a suite (`apps/web/test/`), but it is still the only tested
-  module outside `packages/core`. The API routes, the rate limiter and the search-context
-  layer have none.
-- The `/api/route-symptom` rate limiter is **in-process** — per-instance, resets on deploy,
-  and useless against a distributed caller. Move it to Redis before running more than one
-  instance.
+- `apps/web/test/` covers the untrusted-model parser, the structured data and the rate
+  limiter. The API route handlers themselves and the search-context layer still have
+  no tests.
+- The rate limiter uses Redis when `REDIS_URL` is set and falls back to in-process
+  otherwise, so **set it before running more than one replica** — without it each one
+  grants a caller the full quota. The Redis path is unit-tested against a mocked
+  client but **has not been run against a real server**; smoke-test it once
+  (`docker compose up -d`, then hold the symptom box down past 20 requests a minute)
+  before relying on it in production.
 
 ## Roadmap
 

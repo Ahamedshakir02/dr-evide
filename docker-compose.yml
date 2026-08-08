@@ -10,5 +10,14 @@ services:
     volumes:
       - drevide_pgdata:/var/lib/postgresql/data
 
+  # Shared rate-limit counters for /api/route-symptom. No volume: these are
+  # one-minute windows, and losing them on a restart costs one minute of
+  # limiting rather than any data.
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "6379:6379"
+
 volumes:
   drevide_pgdata:

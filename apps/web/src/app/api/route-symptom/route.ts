@@ -9,7 +9,7 @@ const LIMIT = 20;
 const WINDOW_MS = 60_000;
 
 export async function POST(req: NextRequest) {
-  const { ok, retryAfter } = rateLimit(callerKey(req), LIMIT, WINDOW_MS);
+  const { ok, retryAfter } = await rateLimit(callerKey(req), LIMIT, WINDOW_MS);
   if (!ok) {
     count("ratelimit.rejected");
     return NextResponse.json(
