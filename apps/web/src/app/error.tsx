@@ -29,7 +29,9 @@ export default function Error({ reset }: { error: Error; reset: () => void }) {
           <RotateCw size={18} aria-hidden="true" />
           Try again
         </button>
-        <a className="sh-btn sh-btn--secondary" href="/">
+        {/* /find, not / — someone who hit this was mid-search, and the home
+            page is now the marketing site rather than the symptom box. */}
+        <a className="sh-btn sh-btn--secondary" href="/find">
           Back to search
         </a>
       </div>

@@ -2,7 +2,7 @@
   "name": "Dr Evide",
   "short_name": "Dr Evide",
   "description": "Find the right doctor near you — ranked by verified credentials, never by who paid.",
-  "start_url": "/",
+  "start_url": "/find",
   "display": "standalone",
   "background_color": "#fafaf9",
   "theme_color": "#0f766e",

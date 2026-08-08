@@ -1,0 +1,589 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Dr Evide — landing page (/).
+
+   The website's public face. /find keeps the app layout in globals.css;
+   this is a marketing page and reads like one — wider rhythm, real
+   section breaks, a hero that is copy rather than a control.
+
+   A separate file rather than another 500 lines on the end of
+   globals.css. Every selector here is namespaced (.lp-*, .phone,
+   .mock-*, .store-badge*, .notify*) and none of them appears anywhere
+   else, so cascade order between this file and the app's classes never
+   comes up; splitting costs nothing and keeps both readable.
+
+   Same rules as the rest of the stylesheet: nothing that maps to a
+   design-system class is redefined, both accents stay inside the design
+   system's two, and the page reflows rather than switching layouts by
+   breakpoint.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.landing { --lp-gap: 56px; }
+@media (min-width: 900px) {
+  .landing { --lp-gap: 96px; }
+}
+
+.lp-section {
+  margin-top: var(--lp-gap);
+  /* Anchored from the nav, and the top bar is sticky — without this the
+     heading lands underneath it. */
+  scroll-margin-top: calc(var(--topbar-h) + 20px);
+}
+
+.lp-section__head { max-width: 640px; margin-bottom: 28px; }
+.lp-section__title {
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: clamp(1.6rem, 1.15rem + 1.9vw, 2.4rem);
+  line-height: 1.12;
+  letter-spacing: var(--tracking-display);
+  color: var(--text);
+  margin: 10px 0 0;
+  text-wrap: pretty;
+}
+.lp-section__sub {
+  font-size: 16px;
+  line-height: var(--leading-relaxed);
+  color: var(--text-muted);
+  margin: 12px 0 0;
+}
+
+/* ── Hero ───────────────────────────────────────────────────────── */
+
+.lp-hero { display: grid; gap: 40px; padding-top: 12px; align-items: center; }
+@media (min-width: 900px) {
+  .lp-hero { grid-template-columns: 1.1fr 0.9fr; gap: 64px; padding-top: 40px; }
+}
+
+.lp-hero__title {
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: clamp(2.25rem, 1.3rem + 3.8vw, 3.75rem);
+  line-height: 1.04;
+  letter-spacing: var(--tracking-display);
+  color: var(--text);
+  margin: 14px 0 16px;
+  text-wrap: balance;
+}
+.lp-hero__title em { font-style: normal; color: var(--accent-text); }
+.lp-hero__sub {
+  font-size: 17px;
+  line-height: var(--leading-relaxed);
+  color: var(--text-muted);
+  margin: 0 0 26px;
+  max-width: 46ch;
+}
+.lp-hero__actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.lp-hero__art { display: flex; justify-content: center; }
+
+/* Three checkable claims, not a feature list. Stacked on a phone so no
+   claim wraps mid-sentence and reads as four. */
+.lp-proof {
+  list-style: none;
+  margin: 26px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.lp-proof li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+.lp-proof svg { color: var(--accent-2-text); flex: none; }
+@media (min-width: 900px) {
+  .lp-proof { flex-direction: row; flex-wrap: wrap; gap: 10px 24px; }
+}
+
+/* ── Steps ──────────────────────────────────────────────────────── */
+
+.lp-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 28px; }
+@media (min-width: 760px) {
+  .lp-steps { grid-template-columns: repeat(3, 1fr); gap: 32px; }
+}
+.lp-step { padding-top: 18px; border-top: 2px solid var(--accent); }
+/* The accent rule belongs to step one only, so the eye starts in the
+   right place on a three-column row that has no other entry point. */
+.lp-step:not(:first-child) { border-top-color: var(--border); }
+.lp-step__n { display: block; font-size: 13px; color: var(--text-faint); margin-bottom: 10px; }
+.lp-step__title {
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: 19px;
+  color: var(--text);
+  margin: 0 0 8px;
+}
+.lp-step__body {
+  margin: 0;
+  font-size: 15px;
+  line-height: var(--leading-relaxed);
+  color: var(--text-muted);
+}
+
+/* ── Features ───────────────────────────────────────────────────── */
+
+.lp-features { display: grid; gap: 14px; }
+@media (min-width: 700px) { .lp-features { grid-template-columns: repeat(2, 1fr); gap: 16px; } }
+@media (min-width: 1100px) { .lp-features { grid-template-columns: repeat(3, 1fr); } }
+
+.lp-feature { padding: 24px; }
+.lp-feature__title {
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: 17px;
+  color: var(--text);
+  margin: 16px 0 8px;
+}
+.lp-feature__body {
+  margin: 0;
+  font-size: 14px;
+  line-height: var(--leading-relaxed);
+  color: var(--text-muted);
+}
+
+/* ── App screens ────────────────────────────────────────────────── */
+
+.lp-screens {
+  display: grid;
+  gap: 28px;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+/* width:100% matters. Without it the figure is sized by its caption —
+   a flex column centring its children shrinks to fit — so the phone
+   inside took its width from the length of the sentence underneath and
+   the four frames came out four different sizes. */
+.lp-screen {
+  margin: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+.lp-screen figcaption {
+  max-width: 26ch;
+  text-align: center;
+  font-size: 13px;
+  line-height: var(--leading-normal);
+  color: var(--text-muted);
+}
+.lp-screen__label {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: 15px;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+/* ── How ranking works ──────────────────────────────────────────── */
+
+.lp-trust { display: grid; gap: 16px; align-items: start; }
+@media (min-width: 900px) { .lp-trust { grid-template-columns: 1.05fr 0.95fr; gap: 20px; } }
+
+.lp-weights { padding: 26px; }
+.lp-weights__cap {
+  font-size: 13px;
+  line-height: var(--leading-normal);
+  color: var(--text-faint);
+  margin: 10px 0 22px;
+}
+.lp-weights__list { display: flex; flex-direction: column; gap: 16px; }
+.lp-weight__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 15px;
+  color: var(--text);
+  margin-bottom: 7px;
+}
+.lp-weight__pct { font-weight: var(--fw-bold); color: var(--accent-text); }
+.lp-weight__track {
+  display: block;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.lp-weight__fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: var(--radius-pill);
+}
+
+.lp-trust__notes { display: grid; gap: 16px; }
+.lp-note { padding: 24px; }
+.lp-note h3 {
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: 17px;
+  color: var(--text);
+  margin: 16px 0 8px;
+}
+.lp-note p { margin: 0; font-size: 14px; line-height: var(--leading-relaxed); color: var(--text-muted); }
+.lp-note__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.lp-note__icon--pine {
+  background: color-mix(in srgb, var(--accent-2) 14%, transparent);
+  color: var(--accent-2);
+}
+
+/* ── Download ───────────────────────────────────────────────────── */
+
+.lp-download { display: grid; gap: 16px; align-items: start; }
+@media (min-width: 900px) { .lp-download { grid-template-columns: 1.25fr 0.75fr; } }
+
+.lp-download__stores { padding: 26px; }
+.lp-download__rule { margin: 24px 0; border: none; border-top: 1px solid var(--border); }
+
+.lp-download__browser { padding: 26px; }
+.lp-download__browser h3 {
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: 19px;
+  color: var(--text);
+  margin: 0 0 8px;
+}
+.lp-download__browser p {
+  margin: 0 0 20px;
+  font-size: 14px;
+  line-height: var(--leading-relaxed);
+  color: var(--text-muted);
+}
+
+/* Store badges. Not links, and styled so that reads as deliberate
+   rather than broken — muted surface, dashed edge, and the state named
+   in words inside the badge so it survives a screenshot. */
+.store-badges { display: flex; flex-wrap: wrap; gap: 12px; }
+.store-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1 1 220px;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  border: 1px dashed var(--border-strong);
+  color: var(--text-muted);
+}
+.store-badge__glyph { display: inline-flex; flex: none; color: var(--text-muted); }
+.store-badge__text { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+.store-badge__lead { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+.store-badge__name {
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: 16px;
+  color: var(--text);
+}
+.store-badge__note {
+  margin-left: auto;
+  flex: none;
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--warning-text);
+}
+
+/* ── Notify form ────────────────────────────────────────────────── */
+
+.notify__label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 15px;
+  font-weight: var(--fw-semibold);
+  color: var(--text);
+}
+.notify__row { display: flex; gap: 10px; flex-wrap: wrap; }
+.notify__row .sh-input { flex: 1 1 220px; width: auto; }
+.notify__hint {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: var(--leading-normal);
+  color: var(--text-faint);
+}
+.notify__error { margin: 10px 0 0; font-size: 13px; line-height: var(--leading-normal); color: var(--danger); }
+.notify__error a { display: inline-flex; align-items: center; gap: 4px; }
+/* Success replaces the form. Leaving a filled input beside a tick
+   invites a second submit that does nothing. */
+.notify__done {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 15px;
+  font-weight: var(--fw-semibold);
+  color: var(--accent-2-text);
+}
+
+/* ── FAQ ────────────────────────────────────────────────────────── */
+
+.lp-faq { max-width: 760px; border-top: 1px solid var(--border); }
+.lp-faq__item { border-bottom: 1px solid var(--border); }
+.lp-faq__item summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  /* 60px rather than the text's natural height: this is the only
+     control on the page a thumb has to hit accurately. */
+  min-height: 60px;
+  padding: 14px 0;
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: 17px;
+  color: var(--text);
+}
+.lp-faq__item summary::-webkit-details-marker { display: none; }
+.lp-faq__item summary::after {
+  content: "+";
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 20px;
+  color: var(--text-faint);
+}
+.lp-faq__item[open] summary::after { content: "−"; }
+.lp-faq__item summary:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-sm);
+}
+.lp-faq__item p {
+  margin: 0 0 20px;
+  max-width: 68ch;
+  font-size: 15px;
+  line-height: var(--leading-relaxed);
+  color: var(--text-muted);
+}
+
+/* ═══ Phone mockups ═════════════════════════════════════════════════
+   The app's screens, drawn rather than screenshotted — a few hundred
+   bytes each instead of a 200KB PNG, on a page aimed at people on a
+   mid-range Android and a patchy connection. They inherit the real
+   tokens, so they cannot go stale the way an exported image does.
+
+   Decorative by construction: everything inside the frame is
+   aria-hidden, and the caption beside it is what a screen reader gets.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.phone {
+  position: relative;
+  width: 100%;
+  max-width: 260px;
+  aspect-ratio: 9 / 19;
+  padding: 9px;
+  border-radius: 34px;
+  background: var(--neutral-800);
+  box-shadow: var(--shadow-md);
+  flex: none;
+}
+.phone__notch {
+  position: absolute;
+  top: 9px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 74px;
+  height: 16px;
+  border-radius: 0 0 10px 10px;
+  background: var(--neutral-800);
+  z-index: 2;
+}
+.phone__screen {
+  height: 100%;
+  border-radius: 26px;
+  overflow: hidden;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  font-size: 9px;
+  line-height: 1.35;
+  color: var(--text);
+}
+
+/* Tall enough to clear the notch, with the label pinned to the bottom of
+   the bar rather than its middle — centred, it rendered underneath the
+   cutout on all three screens that have one. */
+.mock-bar {
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+  height: 46px;
+  padding: 0 12px 8px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.mock-bar__mark { font-family: var(--font-display); font-weight: var(--fw-semibold); font-size: 11px; }
+.mock-bar__title { font-family: var(--font-display); font-weight: var(--fw-semibold); font-size: 10px; }
+
+.mock-body { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+.mock-label { font-weight: var(--fw-semibold); font-size: 9px; }
+.mock-textarea {
+  padding: 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-faint);
+  min-height: 42px;
+}
+.mock-hint { color: var(--text-faint); font-size: 8px; }
+.mock-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-weight: var(--fw-semibold);
+}
+.mock-eyebrow {
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.mock-rule { display: flex; align-items: center; gap: 8px; color: var(--text-faint); font-size: 8px; }
+.mock-rule::before, .mock-rule::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+
+.mock-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.mock-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: 8px;
+}
+.mock-tile__icon { width: 16px; height: 16px; border-radius: 5px; background: var(--flare-50); }
+
+.mock-pledge {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 8px;
+  font-weight: var(--fw-semibold);
+  color: var(--accent-2-text);
+}
+
+.mock-card {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.mock-ring {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  font-family: var(--font-mono);
+  font-weight: var(--fw-bold);
+  font-size: 9px;
+  color: var(--accent-text);
+}
+.mock-card__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.mock-line { display: block; height: 6px; border-radius: 3px; background: var(--surface-2); }
+.mock-line--sm { height: 5px; }
+.mock-band {
+  font-size: 7px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent-2-text);
+}
+
+.mock-score { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0 10px; }
+.mock-score__num {
+  font-family: var(--font-mono);
+  font-weight: var(--fw-bold);
+  font-size: 30px;
+  line-height: 1;
+  color: var(--accent-text);
+}
+.mock-score__cap {
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+.mock-score-row { display: flex; flex-direction: column; gap: 3px; }
+.mock-score-row__label { font-size: 8px; color: var(--text-muted); }
+.mock-score-row__track {
+  display: block;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.mock-score-row__fill { display: block; height: 100%; background: var(--accent); }
+.mock-verified {
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 8px;
+  font-weight: var(--fw-semibold);
+  background: color-mix(in srgb, var(--accent-2) 12%, transparent);
+  color: var(--accent-2-text);
+  border: 1px solid color-mix(in srgb, var(--accent-2) 30%, transparent);
+}
+
+/* The one screen in the product that takes the whole display. It is the
+   app's, not the website's — /find shows red flags inline — so it only
+   ever appears here as an illustration of what the app does. */
+.mock-emergency {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px 16px;
+  text-align: center;
+  background: var(--danger);
+  color: #fff;
+}
+.mock-emergency__title {
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: 13px;
+}
+.mock-emergency__body { font-size: 9px; opacity: 0.92; line-height: 1.45; }
+.mock-emergency__cta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--danger);
+  font-weight: var(--fw-semibold);
+  font-size: 10px;
+}

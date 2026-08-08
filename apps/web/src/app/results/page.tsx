@@ -166,7 +166,7 @@ function ResultsInner() {
           One header at every width; it reflows rather than switching to the
           app's sticky icon-button header (Dr Evide.dc.html:160-188). */}
       <div>
-        <button className="link-back" onClick={() => router.push("/")}>
+        <button className="link-back" onClick={() => router.push("/find")}>
           <ChevronLeft size={16} aria-hidden="true" /> {t.backToSearch}
         </button>
         <div

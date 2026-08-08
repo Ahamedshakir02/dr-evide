@@ -13,6 +13,12 @@
    dropped by the browser. */
 @import url("../styles/ds/styles.css");
 @import url("../styles/theme.css");
+/* The landing page's own classes. Ordered before this file's rules
+   rather than after, because @import has to precede every style rule —
+   which is harmless here: every selector in it is namespaced (.lp-*,
+   .phone, .mock-*, .store-badge*, .notify*) and none of them appears
+   below, so the two files never touch the same element. */
+@import url("../styles/landing.css");
 
 *, *::before, *::after { box-sizing: border-box; }
 
@@ -77,6 +83,35 @@ a:hover { color: var(--accent-hover); }
   .topbar__inner { padding: 0 32px; }
 }
 
+/* ── Top-bar nav ────────────────────────────────────────────────────
+   Landing-page sections, reachable from every page. Hidden below 760px
+   rather than folded into a hamburger: they point at parts of a page
+   you can simply scroll, and the one control that must never be behind
+   a menu — "Find a doctor" — is the button beside them, which stays. */
+.topbar__nav { display: none; }
+@media (min-width: 760px) {
+  .topbar__nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 18px;
+  }
+  .topbar__nav a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 0 12px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: var(--fw-medium);
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+  .topbar__nav a:hover { color: var(--text); background: var(--surface-2); }
+  .topbar__nav a:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+}
+.topbar__cta { height: 38px; }
+
 /* ── Language toggle ────────────────────────────────────────────────
    Two buttons rather than a select: there are exactly two languages and
    both fit, and hiding Malayalam inside a dropdown would put it one tap
@@ -133,8 +168,51 @@ a:hover { color: var(--accent-hover); }
 }
 .site-footer p { margin: 0 0 6px; }
 @media (min-width: 900px) {
-  .site-footer { padding: 24px 32px 40px; }
+  .site-footer { padding: 32px 32px 48px; }
 }
+
+/* ── Footer columns ─────────────────────────────────────────────────
+   Added when the site grew more than two pages. The legal block below
+   is untouched and stays last on every page: the disclaimer, the
+   pledge, and the number that has to work when nothing else does. */
+.site-footer__cols {
+  display: grid;
+  gap: 28px;
+  margin-bottom: 28px;
+}
+@media (min-width: 760px) {
+  .site-footer__cols { grid-template-columns: 2fr 1fr 1fr; gap: 40px; }
+}
+.site-footer__brand .wordmark { display: inline-block; font-size: 20px; margin-bottom: 10px; }
+.site-footer__brand p { max-width: 44ch; color: var(--text-muted); font-size: 14px; }
+.site-footer__area { color: var(--text-faint); }
+
+.site-footer__cols nav { display: flex; flex-direction: column; align-items: flex-start; }
+.site-footer__cols h2 {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-eyebrow);
+  color: var(--text-muted);
+  margin: 0 0 4px;
+}
+/* Padded to a 44px target. These sat at 13px with no padding, which is
+   a miss on a phone even for links nobody is in a hurry to press. */
+.site-footer__cols nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+.site-footer__cols nav a:hover { color: var(--accent-text); }
+
+.site-footer__legal {
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+.site-footer__legal a { color: var(--text-muted); font-weight: var(--fw-semibold); }
 
 /* ═══ Shared bits ═══════════════════════════════════════════════════ */
 

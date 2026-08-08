@@ -38,7 +38,15 @@ export const isLang = (v: unknown): v is Lang =>
 
 export interface Strings {
   // ── Shell ──────────────────────────────────────────────────────
-  skipToResults: string;
+  /**
+   * The skip link, on every page of the website.
+   *
+   * "Skip to results" until the site grew a landing page — where there are no
+   * results to skip to, and a keyboard user was told there were. The label has
+   * to describe where the link actually goes on whatever page is showing it,
+   * and only "content" is true on all of them.
+   */
+  skipToContent: string;
   languageLabel: string;
 
   // ── Home ───────────────────────────────────────────────────────
@@ -117,7 +125,7 @@ export interface Strings {
 }
 
 const en: Strings = {
-  skipToResults: "Skip to results",
+  skipToContent: "Skip to content",
   languageLabel: "Language",
 
   homeEyebrow: "Describe it in your own words",
@@ -203,7 +211,7 @@ const en: Strings = {
 };
 
 const ml: Strings = {
-  skipToResults: "ഫലങ്ങളിലേക്ക് പോകുക",
+  skipToContent: "ഉള്ളടക്കത്തിലേക്ക് പോകുക",
   languageLabel: "ഭാഷ",
 
   homeEyebrow: "നിങ്ങളുടെ സ്വന്തം വാക്കുകളിൽ പറയൂ",

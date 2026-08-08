@@ -1,13 +1,26 @@
 import type { Metadata, Viewport } from "next";
+import { isSampleMode } from "@dr-evide/db";
 import { AppChrome } from "@/components/AppChrome";
 import { LangProvider } from "@/lib/lang";
+import { SITE_URL } from "@/lib/site-url";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Dr Evide — find the right doctor near you",
+  /**
+   * A template, not a fixed string. Every page on this site used to share one
+   * title, so a doctor's profile and the front page were indistinguishable in
+   * a search result or a shared link. Pages that set their own title get it;
+   * `default` covers the ones that do not.
+   */
+  title: {
+    default: "Dr Evide — find the right doctor near you",
+    template: "%s · Dr Evide",
+  },
   description:
     "Tell us what's wrong in your own words and we'll show you the most qualified doctors near Edappal — ranked by verified credentials, never by who paid.",
   manifest: "/manifest.json",
+  metadataBase: new URL(SITE_URL),
+  applicationName: "Dr Evide",
 };
 
 export const viewport: Viewport = {
@@ -36,8 +49,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           reader uses, and Malayalam announced under an English voice is worse
           than not translating at all.
         */}
+        {/* isSampleMode() is read here, on the server, so the footer's "none
+            of these people are real" line is a fact about this deployment
+            rather than a sentence someone has to remember to delete. */}
         <LangProvider>
-          <AppChrome>{children}</AppChrome>
+          <AppChrome sampleMode={isSampleMode()}>{children}</AppChrome>
         </LangProvider>
       </body>
     </html>

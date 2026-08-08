@@ -14,7 +14,18 @@ import { useLang } from "@/lib/lang";
 import { defaultSearchContext, saveSearchContext } from "@/lib/search-context";
 import type { RoutingResult, SpecialtySlug } from "@dr-evide/core";
 
-export default function Home() {
+/**
+ * The search app — symptom box, routing, departments.
+ *
+ * This used to be `/`. It moved here when the website took on its second job:
+ * `/` is now the product's public face (what Dr Evide is, how ranking works,
+ * where to get the app) and `/find` is the product itself. Two different
+ * readers, two different pages. Someone who arrives knowing what they want
+ * still gets here in one click, from the top bar on every page.
+ *
+ * Everything downstream — /results, /doctor/[id] — is unchanged.
+ */
+export default function Find() {
   const router = useRouter();
   const { lang, t } = useLang();
   const [text, setText] = useState("");
