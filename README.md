@@ -183,7 +183,8 @@ before running more than one instance.
 ```bash
 npm run dev          # web app on :3000 (landing at /, search at /find)
 npm run mobile       # Metro for the mobile dev client
-npm test             # 117 tests — ranking goldens, emergency corpus, i18n parity
+npm test             # 184 tests — ranking goldens, emergency corpus, i18n parity,
+                     #             and the untrusted-model parser in llm-routing.ts
 npm run typecheck    # all four workspaces
 npm run check:integrity   # fails if a paid-placement field appears
 npm run icons        # redraws the app icons from assets/brand/mark.svg
@@ -225,8 +226,9 @@ changes a TrustScore number or an emergency red flag must be recorded there.**
 - `robots.ts` and `sitemap.ts` exist and `/` and `/find` have their own titles, but
   there is still **no per-doctor metadata and no `Physician` structured data** — every
   profile shares one title and cannot rank for anything.
-- Nothing outside `packages/core` has tests — including the untrusted-model parser in
-  `llm-routing.ts`, which is the riskiest code in the repo.
+- `llm-routing.ts` now has a suite (`apps/web/test/`), but it is still the only tested
+  module outside `packages/core`. The API routes, the rate limiter and the search-context
+  layer have none.
 - The `/api/route-symptom` rate limiter is **in-process** — per-instance, resets on deploy,
   and useless against a distributed caller. Move it to Redis before running more than one
   instance.
