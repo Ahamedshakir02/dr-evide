@@ -1,4 +1,12 @@
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Linking,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -38,30 +46,70 @@ export default function EmergencyScreen() {
   const params = useLocalSearchParams<{ flag?: string }>();
   const flag = (params.flag ?? "").trim().slice(0, 80);
 
+  /**
+   * Short screens get a smaller message, not a cropped one.
+   *
+   * With the actions pinned, a 360×640dp device leaves roughly 340dp for the
+   * warning and the full-size version needs about 530dp — so the Malayalam
+   * headline fell off the bottom, on the one screen in either app that exists
+   * to show both languages at once. Shrinking the type is the lesser loss: a
+   * 32px headline still dominates the view, and a Malayalam reader having a
+   * cardiac event should not have to scroll to find the sentence written for
+   * them.
+   *
+   * 700dp splits the budget 360×640 and 360×800 devices this is for from
+   * everything taller, where nothing changes.
+   */
+  const compact = useWindowDimensions().height < 700;
+
   return (
     <View style={{ flex: 1, backgroundColor: color.emergency }}>
       <StatusBar style="light" />
       <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
-        <ScrollView contentContainerStyle={s.inner}>
-          <View style={{ alignItems: "center", paddingTop: space[2] }}>
-            <View style={s.disc}>
-              <TriangleAlert size={52} color="#fff" strokeWidth={2} />
-            </View>
+        {/*
+          The message scrolls. The actions do not.
+
+          This screen used to be one ScrollView, message and buttons together,
+          with a flexible spacer between them. Seen on a 360×640dp device — the
+          budget Android this product is actually for — the whole viewport was
+          the warning and CALL 108 was entirely below the fold. Someone reading
+          "don't wait" had to scroll an unfamiliar red screen to find the way to
+          call an ambulance.
+
+          So the call button is now in a fixed footer and cannot be scrolled
+          away at any screen size, and the explanation above it gives up height
+          instead. That is the right thing to sacrifice: the reason it is an
+          emergency matters less than being able to act on it. On a tall screen
+          the content centres itself and the layout is unchanged.
+        */}
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={[s.inner, compact && s.innerCompact]}>
+          <View style={{ alignItems: "center" }}>
+            {/*
+              The warning disc is decoration, and on a short screen it was
+              costing 70dp that the Malayalam headline needed — a full-bleed
+              red field and a shouted headline already say "urgent" without it.
+              First thing to go, before a word of either language does.
+            */}
+            {!compact && (
+              <View style={s.disc}>
+                <TriangleAlert size={52} color="#fff" strokeWidth={2} />
+              </View>
+            )}
             <Text style={s.eyebrow}>{EN.couldBeEmergency}</Text>
             <Text style={[s.eyebrow, s.eyebrowMl]}>{ML.couldBeEmergency}</Text>
             {/* The one expressive element on this view. */}
-            <Text style={s.title}>{EN.emergencyTitle}</Text>
-            <Text style={s.titleMl}>{ML.emergencyTitle}</Text>
-            <Text style={s.body}>
+            <Text style={[s.title, compact && s.titleCompact]}>{EN.emergencyTitle}</Text>
+            <Text style={[s.titleMl, compact && s.titleMlCompact]}>{ML.emergencyTitle}</Text>
+            <Text style={[s.body, compact && s.bodyCompact]}>
               {flag ? EN.emergencyBodyFlagged(flag) : EN.emergencyBody}
             </Text>
-            <Text style={[s.body, s.bodyMl]}>
+            <Text style={[s.body, s.bodyMl, compact && s.bodyCompact]}>
               {flag ? ML.emergencyBodyFlagged(flag) : ML.emergencyBody}
             </Text>
           </View>
+        </ScrollView>
 
-          <View style={{ flex: 1, minHeight: space[8] }} />
-
+        <View style={s.actions}>
           {/* CALL 108 */}
           <Pressable
             onPress={() => Linking.openURL("tel:108")}
@@ -102,14 +150,27 @@ export default function EmergencyScreen() {
               <Text style={[s.dismiss, s.dismissMl]}>{ML.notAnEmergency}</Text>
             </Pressable>
           </View>
-        </ScrollView>
+        </View>
       </SafeAreaView>
     </View>
   );
 }
 
 const s = StyleSheet.create({
-  inner: { flexGrow: 1, paddingHorizontal: 26, paddingTop: 28, paddingBottom: 26 },
+  /**
+   * `flexGrow: 1` with `justifyContent: "center"` keeps the message centred in
+   * whatever height is left over, so a tall screen looks as it always did and a
+   * short one simply shows less of it.
+   */
+  inner: {
+    flexGrow: 1,
+    justifyContent: "center",
+    paddingHorizontal: 26,
+    paddingTop: 28,
+    paddingBottom: 12,
+  },
+  /** Fixed. Never scrolls away, at any screen size. */
+  actions: { paddingHorizontal: 26, paddingTop: 4, paddingBottom: 26 },
   disc: {
     width: 96,
     height: 96,
@@ -163,6 +224,15 @@ const s = StyleSheet.create({
     textAlign: "center",
     marginBottom: 16,
   },
+
+  /**
+   * The short-screen step. Nothing here is hidden — every line the tall layout
+   * shows is still shown, at a size that fits above the call button.
+   */
+  innerCompact: { paddingTop: 12, paddingBottom: 8 },
+  titleCompact: { fontSize: 32, lineHeight: 34 },
+  titleMlCompact: { fontSize: 19, lineHeight: 27, marginBottom: 8 },
+  bodyCompact: { fontSize: 13.5, lineHeight: 19 },
   body: {
     fontFamily: font.body,
     fontSize: 17,
