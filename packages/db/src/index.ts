@@ -155,3 +155,41 @@ function findDoctorsSample({
     .filter((d) => d.distance_km <= radiusKm)
     .sort((a, b) => a.distance_km - b.distance_km);
 }
+
+/**
+ * Record an address for the launch email.
+ *
+ * The only write path in this package, and the only place the product stores a
+ * contact detail at all. It returns a result rather than throwing so the route
+ * can say something true to the person in front of it: "already on the list"
+ * and "this deployment has no database" are different answers from "we lost it",
+ * and a form that claims success without a row behind it is the one outcome
+ * worth ruling out.
+ *
+ * `unconfigured` is the honest answer on a sample-data deployment. There is no
+ * in-memory fallback on purpose — a list that evaporates on the next deploy
+ * would take an address, promise an email, and silently never send one.
+ */
+export type NotifyResult = "saved" | "duplicate" | "unconfigured" | "failed";
+
+export async function recordLaunchInterest(
+  email: string,
+  lang: string
+): Promise<NotifyResult> {
+  const p = getPool();
+  if (!p) return "unconfigured";
+
+  try {
+    const { rowCount } = await p.query(
+      `INSERT INTO launch_notifications (email, lang)
+       VALUES ($1, $2)
+       ON CONFLICT (lower(email)) DO NOTHING`,
+      [email.trim().toLowerCase(), lang]
+    );
+    return rowCount === 0 ? "duplicate" : "saved";
+  } catch {
+    // The address is not echoed into a log line. It is the one identifier this
+    // product holds, and an error log is the easiest place to leak it from.
+    return "failed";
+  }
+}

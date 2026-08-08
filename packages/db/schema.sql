@@ -82,3 +82,28 @@ CREATE TABLE IF NOT EXISTS score_history (
 
 CREATE INDEX IF NOT EXISTS score_history_doctor_idx
   ON score_history (doctor_id, computed_at DESC);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Launch notifications
+--
+-- The website's "tell me when it's out" form, and the only place this product
+-- stores a contact detail. Kept deliberately thin: an address, when it was
+-- given, and which language the page was in when it was given — enough to send
+-- one launch email in a language the reader can actually read, and nothing
+-- more. No name, no IP, no referrer, and nothing that could be joined back to a
+-- search: symptom text is never written anywhere, so there is nothing here to
+-- join it to.
+--
+-- Stored lowercase with a unique index so a second submission is a no-op rather
+-- than a duplicate send. Delete the row on request — that is the whole erasure
+-- procedure for this table.
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS launch_notifications (
+  id          serial PRIMARY KEY,
+  email       text NOT NULL,
+  lang        text NOT NULL DEFAULT 'en',   -- 'en' | 'ml', for the launch email
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS launch_notifications_email_idx
+  ON launch_notifications (lower(email));
