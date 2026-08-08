@@ -21,6 +21,22 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   metadataBase: new URL(SITE_URL),
   applicationName: "Dr Evide",
+
+  /**
+   * The manifest carries the launcher icons; these are the browser's own.
+   * Both come from assets/brand/mark.svg via `npm run icons`, so the tab, the
+   * home screen and the install prompt cannot end up showing different marks.
+   *
+   * icon.svg first, with the PNG after it as the fallback for browsers that
+   * do not take SVG favicons.
+   */
+  icons: {
+    icon: [
+      { url: "/icons/icon.svg", type: "image/svg+xml" },
+      { url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
+  },
 };
 
 export const viewport: Viewport = {
