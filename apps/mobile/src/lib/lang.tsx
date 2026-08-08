@@ -1,5 +1,6 @@
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
-import { DEFAULT_LANG, strings, type Lang, type Strings } from "@dr-evide/core";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { DEFAULT_LANG, isLang, strings, type Lang, type Strings } from "@dr-evide/core";
 
 /**
  * The reader's language, for the app.
@@ -15,29 +16,79 @@ import { DEFAULT_LANG, strings, type Lang, type Strings } from "@dr-evide/core";
  * reports en-IN whatever its owner actually reads, so guessing from it gets
  * exactly the wrong answer for the people this matters most to.
  *
- * ── Not yet remembered between launches ──────────────────────────────────
+ * ── Remembered between launches ──────────────────────────────────────────
  *
- * This holds the choice in memory only, so it resets when the app is killed.
- * React Native has no built-in key-value store and the app does not currently
- * depend on one; adding a native module is a dev-client rebuild for everyone
- * working on it, which is not a thing to slip in sideways.
+ * AsyncStorage, under the same key the website writes to localStorage. The
+ * choice used to reset every launch, which on a shared or low-end phone meant
+ * a Malayalam reader re-tapping the toggle every single time they opened the
+ * app to look something up while unwell.
  *
- * The seam is deliberately narrow: `load` and `save` below are the only two
- * places that would change. Wiring a store means implementing those two and
- * seeding useState from `load`, and nothing else in the app moves.
+ * The read is asynchronous - there is no synchronous key-value store on React
+ * Native - so it cannot simply seed useState the way the old `load()` seam
+ * implied. It is started at import instead, and awaited alongside the fonts in
+ * app/_layout.tsx, which was already holding the splash screen. In practice
+ * the read resolves long before the remote typefaces do, so this costs nothing
+ * and there is no frame where the app renders in the wrong language before
+ * correcting itself.
  *
  * The one screen where a forgotten preference would actually cost something -
- * the emergency interrupt - does not read this. It renders both languages at
- * once precisely so it never has to depend on a setting being right.
+ * the emergency interrupt - still does not read this. It renders both
+ * languages at once precisely so it never has to depend on a setting being
+ * right, and that stays true now the setting usually is.
  */
 
-/** Reads the stored preference. Returns undefined until a store exists. */
-function load(): Lang | undefined {
-  return undefined;
+/** The same key the website uses, so the two never drift apart in support. */
+const KEY = "dr-evide:lang";
+
+/**
+ * Started once, at import, rather than on mount.
+ *
+ * The work is a single disk read and the app is going to want the answer
+ * regardless, so there is no reason to wait for React to get around to it.
+ */
+const stored: Promise<Lang | undefined> = load();
+
+async function load(): Promise<Lang | undefined> {
+  try {
+    const value = await AsyncStorage.getItem(KEY);
+    // Anything else on that key - a truncated write, an older format, a value
+    // some future version wrote - is discarded rather than coerced.
+    return isLang(value) ? value : undefined;
+  } catch {
+    // Storage unavailable or corrupt. English is a working answer; failing to
+    // open the app because a preference could not be read is not.
+    return undefined;
+  }
 }
 
-/** Persists the preference. A no-op until a store exists. */
-function save(_lang: Lang): void {}
+function save(lang: Lang): void {
+  // Deliberately not awaited. The choice has already been applied in memory,
+  // and a write that fails should cost the next launch, never this tap.
+  AsyncStorage.setItem(KEY, lang).catch(() => {});
+}
+
+/**
+ * The stored preference, or `null` while the read is still in flight.
+ *
+ * Distinct from `undefined`, which is the legitimate answer "nothing has been
+ * stored yet" - the caller has to be able to tell "still reading" from "read,
+ * and there was nothing there".
+ */
+export function useStoredLang(): Lang | null {
+  const [value, setValue] = useState<Lang | null>(null);
+
+  useEffect(() => {
+    let live = true;
+    stored.then((v) => {
+      if (live) setValue(v ?? DEFAULT_LANG);
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  return value;
+}
 
 interface LangValue {
   lang: Lang;
@@ -51,8 +102,15 @@ const LangContext = createContext<LangValue>({
   setLang: () => {},
 });
 
-export function LangProvider({ children }: { children: React.ReactNode }) {
-  const [lang, setLangState] = useState<Lang>(() => load() ?? DEFAULT_LANG);
+export function LangProvider({
+  initial,
+  children,
+}: {
+  /** From useStoredLang(). Omitted, the provider simply starts at English. */
+  initial?: Lang;
+  children: React.ReactNode;
+}) {
+  const [lang, setLangState] = useState<Lang>(initial ?? DEFAULT_LANG);
 
   const setLang = useCallback((next: Lang) => {
     setLangState(next);

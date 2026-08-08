@@ -9,7 +9,7 @@ import {
   JetBrainsMono_700Bold,
 } from "@expo-google-fonts/jetbrains-mono";
 import { NotoSansMalayalam_600SemiBold } from "@expo-google-fonts/noto-sans-malayalam";
-import { LangProvider } from "../src/lib/lang";
+import { LangProvider, useStoredLang } from "../src/lib/lang";
 import { color } from "../src/theme";
 
 SplashScreen.preventAutoHideAsync();
@@ -38,14 +38,24 @@ export default function RootLayout() {
     GeneralSansSemibold: `${FONTSHARE}/K46YRH762FH3QJ25IQM3VAXAKCHEXXW4/ISLWQPUZHZF33LRIOTBMFOJL57GBGQ4B/3ZLMEXZEQPLTEPMHTQDAUXP5ZZXCZAEN.ttf`,
   });
 
-  useEffect(() => {
-    if (loaded || error) SplashScreen.hideAsync();
-  }, [loaded, error]);
+  /**
+   * The stored language, read off disk. `null` means the read is still in
+   * flight; it is held in the same gate as the fonts so the first frame is
+   * already in the right language rather than correcting itself a moment
+   * later. It is a single AsyncStorage read against remote TTF downloads, so
+   * it has never been the thing anyone waits for.
+   */
+  const storedLang = useStoredLang();
+  const ready = (loaded || error) && storedLang !== null;
 
-  if (!loaded && !error) return null;
+  useEffect(() => {
+    if (ready) SplashScreen.hideAsync();
+  }, [ready]);
+
+  if (!ready) return null;
 
   return (
-    <LangProvider>
+    <LangProvider initial={storedLang}>
       <StatusBar style="dark" />
       <Stack
         screenOptions={{

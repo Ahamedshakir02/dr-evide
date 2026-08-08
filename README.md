@@ -52,6 +52,10 @@ npm run db:seed               # seeds specialties + sample doctors
 npm run dev
 ```
 
+```bash
+npm run notify:export > launch-list.csv   # the launch-email list, for a human to send from
+```
+
 `TRUSTED_PROXY_HOPS` — set to the number of proxies in front of the app (default 1).
 The rate limiter reads `x-forwarded-for` from the right by that many hops; reading the
 first entry would take whatever the caller wrote.
@@ -134,9 +138,10 @@ The **website** is available in English and Malayalam — the product strings in
 `packages/core/src/i18n.ts`, the landing page's own copy in
 `apps/web/src/lib/site-copy.ts` — toggled in the top bar and remembered per browser.
 The **mobile app** reads the same strings from core, toggled in the home-screen top
-bar. The choice is **not yet remembered between launches** — React Native has no
-built-in key-value store and the app depends on none; the seam is the two functions
-at the top of `apps/mobile/src/lib/lang.tsx` and nothing else moves when one arrives.
+bar, and remembers the choice in AsyncStorage under the same key the website writes
+to localStorage. The read is asynchronous, so it is awaited alongside the fonts in
+`app/_layout.tsx` — the first frame is already in the right language rather than
+correcting itself a moment later.
 
 Department names carry an `ml` block in `taxonomy.ts`; the English `name`/`description`
 remain canonical because they are what the `specialties` table stores. Read them
@@ -214,15 +219,20 @@ changes a TrustScore number or an emergency red flag must be recorded there.**
   starting with the emergency copy. This is the last blocker with a life at the end of
   it — the app and the website are now both fully translated, which means a
   mistranslation reaches everyone rather than nobody.
-- **The mobile language choice is not remembered between launches**, and the app has no
-  device-verified layout for Malayalam yet — the screens were reasoned from type
-  metrics, not seen on hardware. Look at them on a real phone before shipping.
+- The mobile screens have now been **seen running, on an emulator** (Pixel_10 AVD, and
+  again forced to 360×640dp) — which caught the emergency screen putting CALL 108 below
+  the fold on a small phone. An emulator is not hardware: it says nothing about real
+  font rasterisation, touch targets in a hand, or performance on a four-year-old
+  midrange device. Still worth half an hour on a real phone before shipping.
 - **The store badges on `/` are placeholders.** They are deliberately inert until the
   apps are published; wire them up in `site-copy.ts` and `StoreBadges.tsx` at the same
   time, or the page starts overstating.
-- **`/api/notify` needs somewhere to send from.** The addresses land in
-  `launch_notifications` and nothing reads that table yet. A list nobody emails is a
-  promise nobody keeps.
+- **The launch email is sent by hand.** `npm run notify:export` dumps
+  `launch_notifications` to CSV on stdout; someone sends from that. There is no
+  automated sender and picking one is a real decision — this product stores exactly
+  one personal identifier, and which processor it passes through needs a contract
+  behind it, not whichever SDK installed most easily. The form promises one email at
+  launch; that promise is now keepable, but only because a person keeps it.
 - Doctor profiles now carry their own title, description, canonical and `Physician`
   structured data (`apps/web/src/lib/structured-data.ts`). **Sample doctors are
   `noindex` and emit no markup at all**, and profiles enter `sitemap.xml` only when
