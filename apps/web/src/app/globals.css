@@ -751,6 +751,27 @@ input[type="range"]:focus-visible { outline: none; box-shadow: var(--focus-ring)
 /* ═══ States ════════════════════════════════════════════════════════ */
 
 .empty-state { text-align: center; color: var(--text-muted); padding: 48px 0; }
+
+/* ── Spot illustrations ─────────────────────────────────────────────
+   Sized in CSS rather than by the SVG's own width/height so one set of
+   drawings can sit at different scales, and capped at the container so
+   they shrink on a narrow phone instead of forcing a scrollbar. */
+.empty-state__art,
+.load-failure__art {
+  display: block;
+  width: 100%;
+  max-width: 188px;
+  height: auto;
+  margin: 0 auto 18px;
+}
+/* Offline reads as a column: the arcs carry the meaning, so they lead. */
+.load-failure--offline {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 28px 20px 24px;
+}
+.load-failure--offline .load-failure__art { margin-bottom: 6px; }
 .error-text { color: var(--danger); font-size: 14px; }
 
 /* Route-level error boundary (app/error.tsx). */

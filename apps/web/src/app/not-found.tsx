@@ -1,5 +1,6 @@
 import { SPECIALTIES, type SpecialtySlug } from "@dr-evide/core";
 import { SpecialtyTile } from "@/components/SpecialtyTile";
+import { NotFoundArt } from "@/components/illustrations/Illustrations";
 
 /**
  * 404. Reached by an unknown URL, and by `notFound()` on a doctor id that does
@@ -13,6 +14,10 @@ export default function NotFound() {
   return (
     <>
       <div style={{ padding: "48px 0 8px", textAlign: "center" }}>
+        {/* The map is intact and the tear is only at the edge — the page is
+            missing, the product is not, and the departments below are the
+            way back onto it. */}
+        <NotFoundArt className="empty-state__art" />
         <h1 className="results-h1">We couldn&apos;t find that page</h1>
         <p style={{ color: "var(--text-muted)", marginTop: 8 }}>
           The link may be old, or that doctor may no longer be listed.

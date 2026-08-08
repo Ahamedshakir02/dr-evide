@@ -9,6 +9,7 @@ import { DoctorCardSkeleton } from "@/components/DoctorCardSkeleton";
 import { SampleDataBanner } from "@/components/SampleDataBanner";
 import { RADIUS_MAX, RadiusControl } from "@/components/RadiusControl";
 import { RankedIcon } from "@/components/icons/SpecialtyIcons";
+import { ConnectionArt, EmptyRadiusArt } from "@/components/illustrations/Illustrations";
 import { useMediaQuery } from "@/lib/hooks";
 import { useLang } from "@/lib/lang";
 import {
@@ -252,9 +253,24 @@ function ResultsInner() {
  */
 function LoadFailure({ kind, onRetry }: { kind: LoadError; onRetry: () => void }) {
   const { t } = useLang();
+  /**
+   * Offline gets the illustration and a column; a server fault keeps the
+   * compact alert. They are different beats. "Your connection dropped" is a
+   * state of the world the reader can act on and the arcs say so at a glance;
+   * "we broke" is our problem, and dressing it up would be the wrong tone on
+   * a failure we caused.
+   */
+  const offline = kind === "offline";
   return (
-    <div className="sh-card load-failure" role="alert">
-      <TriangleAlert size={22} aria-hidden="true" style={{ flex: "none" }} />
+    <div
+      className={`sh-card load-failure${offline ? " load-failure--offline" : ""}`}
+      role="alert"
+    >
+      {offline ? (
+        <ConnectionArt className="load-failure__art" />
+      ) : (
+        <TriangleAlert size={22} aria-hidden="true" style={{ flex: "none" }} />
+      )}
       <div style={{ flex: 1 }}>
         <strong style={{ display: "block", marginBottom: 4 }}>
           {kind === "offline" ? t.offlineTitle : t.serverTitle}
@@ -290,6 +306,10 @@ function EmptyResults({
   const { t } = useLang();
   return (
     <div className="empty-state">
+      {/* The rings are the radius that was searched and the one the button
+          below widens to, with pins in the gap — the same sentence as the
+          copy, so the picture cannot drift from the recovery. */}
+      <EmptyRadiusArt className="empty-state__art" />
       <p style={{ margin: "0 0 4px", color: "var(--text)", fontWeight: 600 }}>
         {t.noneWithin(specialtyName, radius)}
       </p>
