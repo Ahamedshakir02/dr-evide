@@ -52,8 +52,14 @@ const CSP = [
   "frame-ancestors 'none'",
   "object-src 'none'",
   `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "production" ? "" : " 'unsafe-eval'"}`,
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' https://fonts.gstatic.com data:",
+  // Both font CDNs the design system actually loads. Fontshare was missing,
+  // so the two faces that carry the brand — Clash Display and General Sans —
+  // were blocked on every page and the whole site rendered in the generic
+  // sans-serif fallback. The policy has to name what the stylesheet imports;
+  // there is no version of this where the CSP and fonts.css disagree and the
+  // design still arrives.
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.fontshare.com",
+  "font-src 'self' https://fonts.gstatic.com https://cdn.fontshare.com data:",
   // OpenStreetMap raster tiles for the desktop results map.
   "img-src 'self' data: blob: https://*.tile.openstreetmap.org",
   "connect-src 'self'",
