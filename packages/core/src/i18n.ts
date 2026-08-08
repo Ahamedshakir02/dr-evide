@@ -85,6 +85,17 @@ export interface Strings {
   viewProfile: string;
   strongestSignal: (label: string, value: number, max: number) => string;
 
+  /**
+   * Two facts the app states rather than hides.
+   *
+   * The mobile app can fall back to bundled sample doctors with no network,
+   * and it can measure distance from the town centre when location was
+   * refused. Distance drives list order and part of the score, so "near you"
+   * quietly meaning "near the town centre" is something the reader is owed.
+   */
+  offlineSampleFallback: string;
+  distanceFromTownCentre: string;
+
   // ── Score bands ────────────────────────────────────────────────
   bands: Record<"strong" | "good" | "fair" | "limited", string>;
 
@@ -97,6 +108,8 @@ export interface Strings {
 
   // ── Profile ────────────────────────────────────────────────────
   backToResults: string;
+  doctorNotFound: string;
+  distance: string;
   whyRanksHere: string;
   whyRanksBlurb: string;
   credentials: string;
@@ -186,6 +199,9 @@ const en: Strings = {
   strongestSignal: (label, value, max) =>
     `Strongest signal: ${label.toLowerCase()} (${value} of ${max})`,
 
+  offlineSampleFallback: "Offline — showing bundled sample doctors",
+  distanceFromTownCentre: "Distances measured from Edappal town centre",
+
   bands: {
     strong: "Strong",
     good: "Good",
@@ -202,6 +218,8 @@ const en: Strings = {
   tryAgain: "Try again",
 
   backToResults: "Back to results",
+  doctorNotFound: "Doctor not found.",
+  distance: "Distance",
   whyRanksHere: "Why this doctor ranks here",
   whyRanksBlurb:
     "TrustScore is built from five signals we can verify. Nothing here is editable by the doctor or by us.",
@@ -279,6 +297,9 @@ const ml: Strings = {
   viewProfile: "വിവരങ്ങൾ കാണുക",
   strongestSignal: (label, value, max) => `ഏറ്റവും ശക്തമായത്: ${label} (${max}-ൽ ${value})`,
 
+  offlineSampleFallback: "ഓഫ്‌ലൈൻ — ആപ്പിലുള്ള സാമ്പിൾ ഡോക്ടർമാരെ കാണിക്കുന്നു",
+  distanceFromTownCentre: "ദൂരം എടപ്പാൾ ടൗൺ കേന്ദ്രത്തിൽ നിന്ന് കണക്കാക്കുന്നു",
+
   bands: {
     strong: "മികച്ചത്",
     good: "നല്ലത്",
@@ -294,6 +315,8 @@ const ml: Strings = {
   tryAgain: "വീണ്ടും ശ്രമിക്കൂ",
 
   backToResults: "ഫലങ്ങളിലേക്ക് മടങ്ങുക",
+  doctorNotFound: "ഡോക്ടറെ കണ്ടെത്താനായില്ല.",
+  distance: "ദൂരം",
   whyRanksHere: "ഈ ഡോക്ടർ ഇവിടെ വരാൻ കാരണം",
   whyRanksBlurb:
     "പരിശോധിക്കാൻ കഴിയുന്ന അഞ്ച് കാര്യങ്ങളിൽ നിന്നാണ് ട്രസ്റ്റ്‌സ്കോർ ഉണ്ടാക്കുന്നത്. ഇതൊന്നും ഡോക്ടർക്കോ ഞങ്ങൾക്കോ മാറ്റാൻ കഴിയില്ല.",

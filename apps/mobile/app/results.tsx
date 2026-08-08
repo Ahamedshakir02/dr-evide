@@ -11,11 +11,13 @@ import {
   MIN_RADIUS_KM,
   MOBILE_RADIUS_DEFAULT_KM,
   SPECIALTIES,
+  specialtyText,
 } from "@dr-evide/core";
 import type { RankedDoctor, SpecialtySlug } from "@dr-evide/core";
 import { DoctorCard } from "../src/components/DoctorCard";
 import { RankedIcon } from "../src/components/SpecialtyIcon";
 import { Pledge } from "../src/components/ui";
+import { useLang } from "../src/lib/lang";
 import { color, font, radius, space, text } from "../src/theme";
 
 /**
@@ -30,6 +32,9 @@ const RADIUS_MAX = MAX_RADIUS_KM;
 
 /** Results — Dr Evide.dc.html screen 02 (lines 149-280). */
 export default function ResultsScreen() {
+  const { lang, t } = useLang();
+  /** Malayalam needs a different face on every line, not a different string. */
+  const ml = lang === "ml";
   const router = useRouter();
   const params = useLocalSearchParams<{ specialty?: string; conditions?: string }>();
   const specialty = (params.specialty ?? "general") as SpecialtySlug;
@@ -52,7 +57,9 @@ export default function ResultsScreen() {
   const [loading, setLoading] = useState(true);
 
   const conditions = conditionsRaw ? conditionsRaw.split(",").filter(Boolean) : [];
-  const specialtyName = SPECIALTIES[specialty]?.name ?? "Doctors";
+  // specialtyText() rather than SPECIALTIES[...].name: the Malayalam
+  // department names live in the taxonomy and this read straight past them.
+  const specialtyName = SPECIALTIES[specialty] ? specialtyText(specialty, lang).name : "Doctors";
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -84,15 +91,17 @@ export default function ResultsScreen() {
         <View style={{ flexDirection: "row", alignItems: "center", gap: 14, marginBottom: space[3] }}>
           <Pressable
             onPress={() => router.back()}
-            accessibilityLabel="Back to search"
+            accessibilityLabel={t.backToSearch}
             style={s.iconBtn}
           >
             <ChevronLeft size={20} color={color.text} />
           </Pressable>
           <View style={{ flex: 1 }}>
-            <Text style={s.title}>{specialtyName}</Text>
+            <Text style={[s.title, ml && s.titleMl]}>{t.nearYou(specialtyName)}</Text>
             {conditions.length > 0 && (
-              <Text style={s.matched}>matched to &ldquo;{conditions.join(", ")}&rdquo;</Text>
+              <Text style={[s.matched, ml && s.matchedMl]}>
+                {t.matchedTo(conditions.join(", "))}
+              </Text>
             )}
           </View>
         </View>
@@ -102,12 +111,13 @@ export default function ResultsScreen() {
           <View style={s.radiusHead}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
               <MapPin size={16} color={color.accentText} />
-              <Text style={s.radiusLabel}>Within </Text>
+              <Text style={[s.radiusLabel, ml && s.radiusLabelMl]}>{t.within} </Text>
               <Text style={s.radiusValue}>{radiusKm} km</Text>
             </View>
             <Text style={s.count}>
               <Text style={{ fontFamily: font.monoBold, color: color.text }}>{doctors.length}</Text>
-              {doctors.length === 1 ? " doctor" : " doctors"}
+              {" "}
+              {t.doctorsFound(doctors.length)}
             </Text>
           </View>
           <Slider
@@ -123,13 +133,13 @@ export default function ResultsScreen() {
         </View>
 
         <View style={{ marginTop: space[3] }}>
-          <Pledge icon={<RankedIcon />}>Ranked by TrustScore — not by ads</Pledge>
+          <Pledge icon={<RankedIcon />}>{t.rankedByTrust}</Pledge>
         </View>
 
         {offline && (
           <View style={s.offlineRow}>
             <WifiOff size={13} color={color.warningText} />
-            <Text style={s.offlineText}>Offline — showing bundled sample doctors</Text>
+            <Text style={[s.offlineText, ml && s.offlineTextMl]}>{t.offlineSampleFallback}</Text>
           </View>
         )}
 
@@ -139,7 +149,7 @@ export default function ResultsScreen() {
         {!coords.precise && (
           <View style={s.offlineRow}>
             <MapPin size={13} color={color.textFaint} />
-            <Text style={s.approxText}>Distances measured from Edappal town centre</Text>
+            <Text style={[s.approxText, ml && s.approxTextMl]}>{t.distanceFromTownCentre}</Text>
           </View>
         )}
       </View>
@@ -149,9 +159,11 @@ export default function ResultsScreen() {
         {loading && <ActivityIndicator style={{ marginTop: space[12] }} color={color.accent} />}
 
         {!loading && doctors.length === 0 && (
-          <Text style={s.empty}>
-            No {specialtyName} doctors within {radiusKm} km.
-            {radiusKm < RADIUS_MAX ? " Try widening the radius." : ""}
+          /* The same pair the website shows for this state: what happened,
+             then why it is normal here rather than a suggestion to fiddle
+             with the slider. The slider is directly above and visible. */
+          <Text style={[s.empty, ml && s.emptyMl]}>
+            {t.noneWithin(specialtyName, radiusKm)}.{radiusKm < RADIUS_MAX ? ` ${t.ruralNote}` : ""}
           </Text>
         )}
 
@@ -198,7 +210,9 @@ const s = StyleSheet.create({
     borderColor: color.border,
   },
   title: { fontFamily: font.display, fontSize: 20, color: color.text, lineHeight: 24 },
+  titleMl: { fontFamily: font.malayalam, fontSize: 17, lineHeight: 28 },
   matched: { fontFamily: font.body, fontSize: 13, color: color.textFaint },
+  matchedMl: { fontFamily: font.malayalam, fontSize: 12, lineHeight: 22 },
   radiusCard: {
     backgroundColor: color.surface,
     borderWidth: 1,
@@ -214,11 +228,14 @@ const s = StyleSheet.create({
     marginBottom: space[2],
   },
   radiusLabel: { fontFamily: font.bodySemibold, fontSize: text.sm, color: color.text },
+  radiusLabelMl: { fontFamily: font.malayalam, fontSize: 12 },
   radiusValue: { fontFamily: font.monoBold, fontSize: text.sm, color: color.accentText },
   count: { fontFamily: font.body, fontSize: 13, color: color.textMuted },
   offlineRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: space[2] },
   offlineText: { fontFamily: font.body, fontSize: text.xs, color: color.warningText },
+  offlineTextMl: { fontFamily: font.malayalam, fontSize: 11, lineHeight: 20 },
   approxText: { fontFamily: font.body, fontSize: text.xs, color: color.textFaint },
+  approxTextMl: { fontFamily: font.malayalam, fontSize: 11, lineHeight: 20 },
   list: { padding: 22, gap: 14, paddingBottom: space[12] },
   empty: {
     textAlign: "center",
@@ -227,4 +244,5 @@ const s = StyleSheet.create({
     fontSize: text.base,
     marginTop: space[12],
   },
+  emptyMl: { fontFamily: font.malayalam, fontSize: 13, lineHeight: 24 },
 });
