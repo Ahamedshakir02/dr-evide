@@ -3,7 +3,24 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MapPin, Phone, TriangleAlert } from "lucide-react-native";
+import { strings } from "@dr-evide/core";
 import { color, font, radius, space, text } from "../src/theme";
+
+/**
+ * Both languages, always, on this screen only.
+ *
+ * The rest of the app can follow a language preference. This screen cannot
+ * wait for one: it appears unannounced, at the moment a red flag fires, and
+ * there is no reliable way to know which language the person holding the phone
+ * reads most easily — a phone sold in Kerala reports en-IN regardless. Every
+ * other screen in this product costs someone a translation when it guesses
+ * wrong. This one costs them time they may not have.
+ *
+ * So the instruction is shown twice rather than chosen. It is the only screen
+ * in either app that does this, and the extra height is worth it.
+ */
+const EN = strings("en");
+const ML = strings("ml");
 
 /**
  * Emergency interrupt — Dr Evide.dc.html screen 04 (lines 409-458).
@@ -30,18 +47,16 @@ export default function EmergencyScreen() {
             <View style={s.disc}>
               <TriangleAlert size={52} color="#fff" strokeWidth={2} />
             </View>
-            <Text style={s.eyebrow}>This could be an emergency</Text>
+            <Text style={s.eyebrow}>{EN.couldBeEmergency}</Text>
+            <Text style={[s.eyebrow, s.eyebrowMl]}>{ML.couldBeEmergency}</Text>
             {/* The one expressive element on this view. */}
-            <Text style={s.title}>Don&apos;t wait —{"\n"}get help now</Text>
+            <Text style={s.title}>{EN.emergencyTitle}</Text>
+            <Text style={s.titleMl}>{ML.emergencyTitle}</Text>
             <Text style={s.body}>
-              {flag ? (
-                <>
-                  What you described — <Text style={s.bodyStrong}>{flag}</Text> — needs urgent
-                  care, not an appointment.
-                </>
-              ) : (
-                <>What you described needs urgent care, not an appointment.</>
-              )}
+              {flag ? EN.emergencyBodyFlagged(flag) : EN.emergencyBody}
+            </Text>
+            <Text style={[s.body, s.bodyMl]}>
+              {flag ? ML.emergencyBodyFlagged(flag) : ML.emergencyBody}
             </Text>
           </View>
 
@@ -57,9 +72,12 @@ export default function EmergencyScreen() {
             <View style={s.callDisc}>
               <Phone size={30} color="#fff" />
             </View>
-            <View>
-              <Text style={s.callNum}>Call 108</Text>
-              <Text style={s.callSub}>Free ambulance · 24×7 Kerala</Text>
+            <View style={{ flex: 1 }}>
+              {/* "108" carries this row in either language, so the number stays
+                  one line and only the sub-label is doubled. */}
+              <Text style={s.callNum}>{EN.call} 108</Text>
+              <Text style={s.callSub}>{EN.freeAmbulance}</Text>
+              <Text style={[s.callSub, s.callSubMl]}>{ML.freeAmbulance}</Text>
             </View>
           </Pressable>
 
@@ -70,14 +88,18 @@ export default function EmergencyScreen() {
             style={({ pressed }) => [s.outline, pressed && { opacity: 0.85 }]}
           >
             <MapPin size={20} color="#fff" />
-            <Text style={s.outlineText}>Nearest emergency room</Text>
+            <View>
+              <Text style={s.outlineText}>{EN.nearestEmergencyRoom}</Text>
+              <Text style={[s.outlineText, s.outlineTextMl]}>{ML.nearestEmergencyRoom}</Text>
+            </View>
           </Pressable>
 
           <View style={{ alignItems: "center", marginTop: space[4] }}>
             <Pressable
               onPress={() => router.replace({ pathname: "/results", params: { specialty: "general" } })}
             >
-              <Text style={s.dismiss}>This isn&apos;t an emergency — continue anyway</Text>
+              <Text style={s.dismiss}>{EN.notAnEmergency}</Text>
+              <Text style={[s.dismiss, s.dismissMl]}>{ML.notAnEmergency}</Text>
             </Pressable>
           </View>
         </ScrollView>
@@ -105,17 +127,41 @@ const s = StyleSheet.create({
     letterSpacing: 1.8,
     textTransform: "uppercase",
     color: "rgba(255,255,255,0.85)",
-    marginBottom: space[3],
+    marginBottom: space[1],
     textAlign: "center",
+  },
+  eyebrowMl: {
+    fontFamily: font.malayalam,
+    fontSize: 12,
+    // Malayalam has no case, so the tracking that makes an English eyebrow
+    // read as a label just pushes the glyphs apart.
+    letterSpacing: 0,
+    textTransform: "none",
+    marginBottom: space[3],
   },
   title: {
     fontFamily: font.displayCaps,
     textTransform: "uppercase",
-    fontSize: 52,
-    lineHeight: 50,
+    fontSize: 44,
+    lineHeight: 46,
     color: "#fff",
     textAlign: "center",
-    marginBottom: 18,
+    marginBottom: 6,
+  },
+  /**
+   * Malayalam gets its own face and no uppercase. Anton carries no Malayalam
+   * glyphs, so the display face would have rendered this as blank boxes, and
+   * textTransform: uppercase means nothing in the script — applying the
+   * English title's style to it would have produced an unreadable headline on
+   * the one screen that must never be unreadable.
+   */
+  titleMl: {
+    fontFamily: font.malayalam,
+    fontSize: 26,
+    lineHeight: 38,
+    color: "#fff",
+    textAlign: "center",
+    marginBottom: 16,
   },
   body: {
     fontFamily: font.body,
@@ -125,7 +171,12 @@ const s = StyleSheet.create({
     textAlign: "center",
     maxWidth: 320,
   },
-  bodyStrong: { fontFamily: font.bodySemibold, color: "#fff" },
+  bodyMl: {
+    fontFamily: font.malayalam,
+    fontSize: 15,
+    lineHeight: 26,
+    marginTop: space[2],
+  },
   callCard: {
     backgroundColor: "#fff",
     borderRadius: 20,
@@ -161,9 +212,13 @@ const s = StyleSheet.create({
     color: color.textMuted,
     marginTop: 3,
   },
+  callSubMl: { fontFamily: font.malayalam, fontSize: 13, marginTop: 1 },
   outline: {
     marginTop: 14,
-    height: 56,
+    // minHeight, not height: this button carries two lines of label now, and
+    // a fixed 56 would have clipped the Malayalam off the bottom.
+    minHeight: 56,
+    paddingVertical: space[2],
     borderRadius: radius.lg,
     backgroundColor: "rgba(255,255,255,0.16)",
     borderWidth: 1.5,
@@ -174,10 +229,20 @@ const s = StyleSheet.create({
     gap: 10,
   },
   outlineText: { fontFamily: font.bodySemibold, fontSize: text.base, color: "#fff" },
+  outlineTextMl: { fontFamily: font.malayalam, fontSize: 13, opacity: 0.9 },
   dismiss: {
     fontFamily: font.body,
     fontSize: text.sm,
     color: "rgba(255,255,255,0.8)",
+    textAlign: "center",
+  },
+  /**
+   * The underline moved to the Malayalam line, so the pair reads as one
+   * control with one rule under it rather than two separate links.
+   */
+  dismissMl: {
+    fontFamily: font.malayalam,
+    fontSize: 13,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(255,255,255,0.4)",
     paddingBottom: 2,
