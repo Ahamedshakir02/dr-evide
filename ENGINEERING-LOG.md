@@ -12,6 +12,118 @@ Rules for this file:
 
 ---
 
+## 2026-08-08 — the brand arrives, and the app learns Malayalam
+
+Four things were true at once: the site's typefaces had never loaded, the PWA could
+not be installed, the app was English-only, and the screens where the product fails
+had no design at all. They are one entry because they are one pass.
+
+### The typefaces were blocked by our own CSP
+
+`fonts.css` has always imported Clash Display and General Sans from Fontshare.
+`style-src` only ever named `fonts.googleapis.com`. So the stylesheet was blocked on
+every page load, neither `@font-face` was ever parsed, and the whole site — every
+heading, every paragraph, both languages — rendered in the browser's generic
+sans-serif.
+
+It survived review because Anton and JetBrains Mono *are* Google-hosted and did
+load. The mono numerals in the TrustScore looked right, so the page looked styled
+rather than unstyled.
+
+**Considered and rejected:** self-hosting the two faces. It is the better end state —
+it removes a third-party request on the patchy connections this product is built for,
+and it stops a font CDN seeing our readers' IPs. Rejected *for now* because it means
+committing binary font files and a licence review, and the immediate bug is that the
+policy did not match the stylesheet. Worth doing deliberately, not as a side effect.
+
+### The top bar pushed the page sideways, in Malayalam worst of all
+
+The section nav appeared at 760px. Measured with the real faces loaded, the bar needs
+840px in English and **961px in Malayalam** — longer labels, and a "Find a doctor"
+button that goes from 133px to 196px. Everything between scrolled the whole document
+horizontally: an 80px band in English, a 200px band in Malayalam, which is most
+tablets.
+
+Now two breakpoints, and the stylesheet reads the language rather than measuring it —
+`LangProvider` already writes the choice to `<html lang>` because a screen reader
+needs it. **Considered and rejected:** one breakpoint at 980px. Simpler, but it hides
+the nav from English readers across 140px where it fits perfectly, to accommodate a
+language that is not the one being rendered.
+
+### The mark, and an installable PWA
+
+`manifest.json` shipped `"icons": []`, so Chrome had nothing to build an install
+prompt from and "add to home screen" did nothing — on the mid-range Android that
+dominates the launch area, and with no store listing, that *is* the install.
+
+The mark is a map pin whose counter is a medical cross: the name drawn rather than
+written, since ഡോക്ടർ എവിടെ? is "where is the doctor?". One closed path with
+`fill-rule="evenodd"`, so it stays a single silhouette and can be a teal glyph in a
+tab, white on teal in a launcher, or monochrome later, without being redrawn.
+
+`scripts/generate-icons.mjs` lifts the path out of `assets/brand/mark.svg` rather
+than restating it — the one-copy rule, applied to a shape. Deliberately **not** wired
+into the build: an app icon should arrive as a binary diff someone chose to commit.
+
+### The three screens that had nothing to show
+
+Empty results, a dead link and a dropped connection were plain text. Each now draws
+its own situation rather than being decorated: the empty state is a real radius with
+real pins in the gap between the searched ring and the widened one, which is the
+actual state of a rural area — not "no doctors exist" but "none within the distance
+you said you could travel".
+
+Offline gets the drawing; a server fault keeps the compact alert. Dressing up a
+failure we caused would be the wrong tone.
+
+### The app learns Malayalam — and the emergency screen learns both
+
+The strings had been in core since the website was translated. The app never read
+them, and walked straight past the Malayalam department names already in the
+taxonomy. Two screens called `SPECIALTIES[slug].name` instead of
+`specialtyText(slug, lang)`, and the profile rendered `SCORE_WEIGHTS`' own English
+`label` instead of `t.weightLabels[key]` — the five signal names that explain why a
+doctor ranks where they do, in English, on the screen whose whole purpose is being
+understood.
+
+**The emergency interrupt shows both languages at once and reads no preference.**
+This is the one deliberate asymmetry in the product. Every other screen costs someone
+a translation when it guesses wrong; this one costs them time they may not have. It
+arrives unannounced, and a phone sold in Kerala reports `en-IN` whatever its owner
+reads. So it does not guess.
+
+Malayalam is never just a different string in the same style — Clash Display and
+General Sans carry no Malayalam glyphs, so inheriting an English style renders the
+script as blank boxes. The emergency headline would have been a row of empty boxes at
+44px. Every translated line now carries a Noto Sans Malayalam override.
+
+**Considered and rejected:** adding `@react-native-async-storage/async-storage` so
+the language choice survives a relaunch. It is a native module, so it is a dev-client
+rebuild for everyone working on the app, and it is not something to slip in as part
+of a translation pass. The seam is two functions in `apps/mobile/src/lib/lang.tsx`.
+
+### The tests that hold the tables together
+
+`packages/core/test/i18n.test.ts` asserts matching key sets, no empty values, no
+Malayalam value byte-identical to its English counterpart, and every Malayalam value
+actually containing Malayalam script.
+
+That last one is the point. The realistic failure is not a missing key — TypeScript
+catches those. It is someone adding a string to `en`, being told to add it to `ml`,
+and pasting the English across to satisfy the compiler. It compiles, renders, and
+reviews clean, and a Malayalam reader gets an English sentence. Confirmed the test
+fails on exactly that mistake before trusting it.
+
+**None of this touches a TrustScore number or an emergency red flag.**
+`SCORE_VERSION` stays `1.0.0` and the golden tests are untouched. The emergency
+*copy* changed language; the emergency *detection* did not change at all.
+
+**Still open:** the Malayalam is still unreviewed by a native speaker, and now it
+reaches both apps rather than one — a mistranslation now has a wider blast radius,
+not a smaller one. The mobile screens have not been seen on a device.
+
+---
+
 ## 2026-08-07 — the website splits in two: a landing page at `/`, the search at `/find`
 
 **Problem.** The website was a second copy of the app. `/` was the symptom box, and

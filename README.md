@@ -113,7 +113,11 @@ apps/web/           Next.js — pages, API routes, design system. No scoring log
   src/components/landing/   landing-only components (phone mocks, store badges, notify)
   src/lib/site-copy.ts      landing copy, en + ml, web-only by design
 apps/mobile/        Expo — imports core, never re-implements it
+  src/components/illustrations/  spot art for the empty, 404 and offline states
+  public/icons/     generated - see assets/brand/
+assets/brand/       mark.svg, the one definition of the app mark
 scripts/            check-no-paid-ranking.mjs (CI integrity gate)
+                    generate-icons.mjs (mark -> favicon, PWA, apple-touch)
 dr-evide-doctor-discovery/   design handoff bundle (reference, not built)
 ```
 
@@ -129,13 +133,35 @@ differently in the app and on the site. If both apps need it, it belongs in `pac
 The **website** is available in English and Malayalam — the product strings in
 `packages/core/src/i18n.ts`, the landing page's own copy in
 `apps/web/src/lib/site-copy.ts` — toggled in the top bar and remembered per browser.
-The **mobile app is still English-only** — the strings are in core, the wiring is not.
+The **mobile app** reads the same strings from core, toggled in the home-screen top
+bar. The choice is **not yet remembered between launches** — React Native has no
+built-in key-value store and the app depends on none; the seam is the two functions
+at the top of `apps/mobile/src/lib/lang.tsx` and nothing else moves when one arrives.
+
 Department names carry an `ml` block in `taxonomy.ts`; the English `name`/`description`
-remain canonical because they are what the `specialties` table stores.
+remain canonical because they are what the `specialties` table stores. Read them
+through `specialtyText(slug, lang)` — reaching for `SPECIALTIES[slug].name` directly
+is how both mobile screens ended up showing English names that were already
+translated.
+
+Malayalam is never just a different string in the same style: Clash Display and
+General Sans carry no Malayalam glyphs, so any style naming them renders the script
+as blank boxes. Every translated line needs its Noto Sans Malayalam counterpart.
+
+The **emergency interrupt shows both languages at once** and reads no preference at
+all. It arrives unannounced, there is no reliable signal for which language the
+person holding the phone reads, and it is the one screen where guessing wrong costs
+more than a translation. It is the only screen in either app that doubles up.
+
+`packages/core/test/i18n.test.ts` holds the tables together: matching key sets, no
+empty values, and every Malayalam value actually written in Malayalam script — which
+catches the common failure, where an English string is pasted across to satisfy the
+compiler and nothing ever looks wrong.
 
 **The Malayalam has not yet been reviewed by a native speaker.** It must be before
 launch — a mistranslation in the emergency copy is the one bug here that can cost a
-life. That applies to `site-copy.ts` too, though nothing on the landing page is
+life. No test can check this; the ones above only prove a translation is *present*.
+That applies to `site-copy.ts` too, though nothing on the landing page is
 load-bearing for safety: the red flags live on `/find`, in core's strings.
 
 ## Health and observability
@@ -157,9 +183,10 @@ before running more than one instance.
 ```bash
 npm run dev          # web app on :3000 (landing at /, search at /find)
 npm run mobile       # Metro for the mobile dev client
-npm test             # 109 tests — ranking goldens + emergency corpus
+npm test             # 117 tests — ranking goldens, emergency corpus, i18n parity
 npm run typecheck    # all four workspaces
 npm run check:integrity   # fails if a paid-placement field appears
+npm run icons        # redraws the app icons from assets/brand/mark.svg
 npm run verify       # everything above, in the order CI runs it
 ```
 
@@ -182,11 +209,13 @@ changes a TrustScore number or an emergency red flag must be recorded there.**
 - Legal review: medical disclaimer, DPDP Act 2023 (symptom text = sensitive personal data),
   defamation exposure on rankings.
 - Google Places ToS compliance if importing review data.
-- **The mobile app is English-only**, including the full-screen emergency interrupt.
 - **The Malayalam interface strings are unreviewed.** A native speaker must check them,
-  starting with the emergency copy.
-- `manifest.json` has no icons, so the PWA cannot be installed — the thing that matters
-  most on the low-end Android that dominates the launch area.
+  starting with the emergency copy. This is the last blocker with a life at the end of
+  it — the app and the website are now both fully translated, which means a
+  mistranslation reaches everyone rather than nobody.
+- **The mobile language choice is not remembered between launches**, and the app has no
+  device-verified layout for Malayalam yet — the screens were reasoned from type
+  metrics, not seen on hardware. Look at them on a real phone before shipping.
 - **The store badges on `/` are placeholders.** They are deliberately inert until the
   apps are published; wire them up in `site-copy.ts` and `StoreBadges.tsx` at the same
   time, or the page starts overstating.
