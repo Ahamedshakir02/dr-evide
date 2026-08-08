@@ -112,6 +112,25 @@ export interface Strings {
   // ── Emergency ──────────────────────────────────────────────────
   couldBeEmergency: string;
   call: string;
+  /**
+   * The mobile app's full-screen interrupt.
+   *
+   * Here rather than in the app for the usual reason — both apps must say the
+   * same thing — but with more riding on it than the rest of this file. The
+   * app rendered this screen in hardcoded English, which meant the one screen
+   * that has to work for everyone worked only for people who read English.
+   *
+   * The app shows these in both languages at once rather than picking one. At
+   * the moment a red flag fires there is no reliable way to know which
+   * language the person holding the phone reads most easily, and the cost of
+   * guessing wrong is not an inconvenience.
+   */
+  emergencyTitle: string;
+  emergencyBody: string;
+  emergencyBodyFlagged: (flag: string) => string;
+  freeAmbulance: string;
+  nearestEmergencyRoom: string;
+  notAnEmergency: string;
 
   // ── Sample data ────────────────────────────────────────────────
   sampleTitle: string;
@@ -198,6 +217,13 @@ const en: Strings = {
 
   couldBeEmergency: "This could be an emergency",
   call: "Call",
+  emergencyTitle: "Don't wait — get help now",
+  emergencyBody: "What you described needs urgent care, not an appointment.",
+  emergencyBodyFlagged: (flag) =>
+    `What you described — ${flag} — needs urgent care, not an appointment.`,
+  freeAmbulance: "Free ambulance · 24×7 Kerala",
+  nearestEmergencyRoom: "Nearest emergency room",
+  notAnEmergency: "This isn't an emergency — continue anyway",
 
   sampleTitle: "These doctors are not real.",
   sampleBody:
@@ -283,6 +309,13 @@ const ml: Strings = {
 
   couldBeEmergency: "ഇത് ഒരു അടിയന്തരാവസ്ഥയാകാം",
   call: "വിളിക്കൂ",
+  emergencyTitle: "കാത്തിരിക്കരുത് — ഇപ്പോൾ തന്നെ സഹായം തേടൂ",
+  emergencyBody: "നിങ്ങൾ പറഞ്ഞതിന് അടിയന്തര ചികിത്സ വേണം, അപ്പോയിന്റ്മെന്റല്ല.",
+  emergencyBodyFlagged: (flag) =>
+    `നിങ്ങൾ പറഞ്ഞതിന് — ${flag} — അടിയന്തര ചികിത്സ വേണം, അപ്പോയിന്റ്മെന്റല്ല.`,
+  freeAmbulance: "സൗജന്യ ആംബുലൻസ് · കേരളത്തിൽ 24×7",
+  nearestEmergencyRoom: "അടുത്തുള്ള അത്യാഹിത വിഭാഗം",
+  notAnEmergency: "ഇത് അടിയന്തരാവസ്ഥയല്ല — എന്നാലും തുടരുക",
 
   sampleTitle: "ഈ ഡോക്ടർമാർ യഥാർത്ഥമല്ല.",
   sampleBody:
