@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { isSampleMode } from "@dr-evide/db";
 import { AppChrome } from "@/components/AppChrome";
 import { LangProvider } from "@/lib/lang";
+import { OG_IMAGE, TWITTER_IMAGE } from "@/lib/og";
 import { SITE_URL } from "@/lib/site-url";
 import "./globals.css";
 
@@ -21,6 +22,23 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   metadataBase: new URL(SITE_URL),
   applicationName: "Dr Evide",
+
+  /**
+   * The share card. Most links to this site travel through WhatsApp, where an
+   * unfurled card is the whole first impression and a missing one is a grey box.
+   *
+   * A committed PNG rather than a runtime `next/og` route: the brand faces are
+   * under a licence that does not permit shipping the font files, so they are
+   * downloaded at generation time by `npm run og` and only the image is stored.
+   * See scripts/generate-og.mjs.
+   */
+  openGraph: {
+    type: "website",
+    siteName: "Dr Evide",
+    locale: "en_IN",
+    images: OG_IMAGE,
+  },
+  twitter: { card: "summary_large_image", images: TWITTER_IMAGE },
 
   /**
    * The manifest carries the launcher icons; these are the browser's own.

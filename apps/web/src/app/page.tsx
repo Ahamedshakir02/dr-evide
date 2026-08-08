@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Landing } from "@/components/landing/Landing";
+import { OG_IMAGE } from "@/lib/og";
 
 /**
  * `/` — what Dr Evide is, what the app does, and where to get it.
@@ -23,6 +24,9 @@ export const metadata: Metadata = {
       "Symptom routing in Malayalam and English, a transparent 0–100 TrustScore, and no paid placement — ever.",
     type: "website",
     locale: "en_IN",
+    // Not inherited — see lib/og.ts. Without this the most shared URL on the
+    // site is the one with no card.
+    images: OG_IMAGE,
   },
 };
 

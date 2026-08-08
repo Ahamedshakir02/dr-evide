@@ -11,6 +11,7 @@ import {
   telHref,
 } from "@dr-evide/core";
 import { getDoctor } from "@dr-evide/db";
+import { OG_IMAGE } from "@/lib/og";
 import { SITE_URL } from "@/lib/site-url";
 import {
   buildPhysicianJsonLd,
@@ -73,11 +74,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
      * each other.
      */
     alternates: { canonical },
+    /**
+     * `images` is repeated from the root layout on purpose. Next merges
+     * metadata shallowly, so a page that sets `openGraph` replaces the parent's
+     * object outright — omit it here and every shared profile unfurls as a grey
+     * box while the front page has a card.
+     */
     openGraph: {
       title,
       description,
       url: `${SITE_URL}${canonical}`,
       type: "profile",
+      images: OG_IMAGE,
     },
     /**
      * Every seeded doctor is fictional. Indexing one would publish an invented

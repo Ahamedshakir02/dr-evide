@@ -153,6 +153,29 @@ Malayalam is never just a different string in the same style: Clash Display and
 General Sans carry no Malayalam glyphs, so any style naming them renders the script
 as blank boxes. Every translated line needs its Noto Sans Malayalam counterpart.
 
+## Typefaces — and why they are not self-hosted
+
+Clash Display and General Sans load from Fontshare's API; Anton, JetBrains Mono and
+Noto Sans Malayalam from Google Fonts. Self-hosting the first two would remove a
+third-party request on the patchy connections this product targets and stop a font
+CDN seeing readers' IPs, which is worth wanting.
+
+**The licence does not allow it.** The ITF Free Font License grants use "in any media
+… at any scale" but forbids redistributing the font files — including "uploading them
+in a public server" — and separately forbids transmitting them "over the Internet in
+font serving". Committing a `.woff2` under `public/` is both. The licensed delivery
+path for web use is Fontshare's own API, which is what `fonts.css` already does, so
+the current setup is not a shortcut — it is the only compliant option for these faces.
+
+The licence is equally explicit that *output* is unrestricted: logos, graphic elements
+and "static images" are all permitted. That is what makes `npm run og` legitimate —
+it downloads the fonts at generation time, converts the text to outlines, and commits
+a PNG containing no font software.
+
+If the privacy and offline arguments outweigh these particular faces, the way through
+is a different pair under the SIL Open Font License, which permits self-hosting
+outright. That is a brand decision, not an engineering one.
+
 The **emergency interrupt shows both languages at once** and reads no preference at
 all. It arrives unannounced, there is no reliable signal for which language the
 person holding the phone reads, and it is the one screen where guessing wrong costs
@@ -193,6 +216,7 @@ npm test             # 184 tests — ranking goldens, emergency corpus, i18n par
 npm run typecheck    # all four workspaces
 npm run check:integrity   # fails if a paid-placement field appears
 npm run icons        # redraws the app icons from assets/brand/mark.svg
+npm run og           # redraws the share card (needs network — fonts are fetched, not stored)
 npm run verify       # everything above, in the order CI runs it
 ```
 
