@@ -1,3 +1,5 @@
+import { cache } from "react";
+import type { Metadata } from "next";
 import { ChevronLeft, MapPin, Navigation, Phone } from "lucide-react";
 import { notFound } from "next/navigation";
 import {
@@ -9,6 +11,12 @@ import {
   telHref,
 } from "@dr-evide/core";
 import { getDoctor } from "@dr-evide/db";
+import { SITE_URL } from "@/lib/site-url";
+import {
+  buildPhysicianJsonLd,
+  doctorDescription,
+  doctorTitle,
+} from "@/lib/structured-data";
 import { ClinicDistance, ProfileScore } from "@/components/ProfileScore";
 import { CredentialRow } from "@/components/CredentialRow";
 import { SamplePill, VerifiedPill } from "@/components/Badges";
@@ -32,11 +40,61 @@ interface Props {
   searchParams: Promise<{ specialty?: string }>;
 }
 
+/**
+ * generateMetadata and the page body both need the doctor, and Next calls them
+ * separately. React's `cache` collapses that to one query per request; without
+ * it every profile view costs two identical round trips.
+ */
+const loadDoctor = cache(async (rawId: string) => {
+  const id = parseInt(rawId, 10);
+  return Number.isNaN(id) ? null : getDoctor(id);
+});
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+  const doctor = await loadDoctor(id);
+
+  // notFound() belongs to the page, which renders the 404. Metadata for a
+  // missing doctor only has to avoid inheriting the site-wide default and
+  // announcing a person who is not there.
+  if (!doctor) return { title: "Doctor not found" };
+
+  const canonical = `/doctor/${doctor.id}`;
+  const title = doctorTitle(doctor);
+  const description = doctorDescription(doctor, new Date().getFullYear());
+
+  return {
+    title,
+    description,
+    /**
+     * Canonical without the query string. `?specialty=` exists only to point
+     * "back to results" at the right department — it changes no content, and
+     * left unset it would split one profile into seven URLs competing with
+     * each other.
+     */
+    alternates: { canonical },
+    openGraph: {
+      title,
+      description,
+      url: `${SITE_URL}${canonical}`,
+      type: "profile",
+    },
+    /**
+     * Every seeded doctor is fictional. Indexing one would publish an invented
+     * person, at a real-sounding clinic in a real town, into the results
+     * someone gets for a genuine search — and the "Sample data" banner that
+     * makes the page honest does not travel with the listing. The flag comes
+     * off the row, so this stops applying the day real data is loaded rather
+     * than when someone remembers to delete it.
+     */
+    robots: doctor.is_sample ? { index: false, follow: false } : undefined,
+  };
+}
+
 export default async function DoctorPage(props: Props) {
   const [{ id: rawId }, searchParams] = await Promise.all([props.params, props.searchParams]);
 
-  const id = parseInt(rawId, 10);
-  const doctor = Number.isNaN(id) ? null : await getDoctor(id);
+  const doctor = await loadDoctor(rawId);
 
   // A missing doctor is a 404, not a page that renders "not found" with a 200.
   // Crawlers and monitoring both read the status code, never the copy.
@@ -50,8 +108,24 @@ export default async function DoctorPage(props: Props) {
     ? searchParams.specialty
     : doctor.specialty_slug;
 
+  /** Null for every sample doctor — see lib/structured-data.ts. */
+  const jsonLd = buildPhysicianJsonLd(doctor, { siteUrl: SITE_URL });
+
   return (
     <>
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          // The content is built from typed fields and serialised by
+          // JSON.stringify, never concatenated. `<` is escaped because a
+          // clinic name containing "</script>" would otherwise close this
+          // element early and put the rest of the row into the document.
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
+          }}
+        />
+      )}
+
       <a className="link-back" href={`/results?specialty=${backSlug}`}>
         <ChevronLeft size={16} aria-hidden="true" /> <Txt k="backToResults" />
       </a>

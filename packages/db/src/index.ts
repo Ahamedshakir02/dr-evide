@@ -105,6 +105,45 @@ export async function getDoctor(id: number): Promise<Doctor | null> {
 }
 
 /**
+ * Doctors whose profiles may be listed in sitemap.xml.
+ *
+ * `is_sample` is the gate, in SQL rather than filtered afterwards, and it is
+ * the same gate the `Physician` markup uses — a fictional person is neither
+ * described to a search engine nor offered to one. Returns an empty list in
+ * sample mode, which is why a zero-setup checkout still publishes a two-entry
+ * sitemap rather than twenty invented doctors.
+ *
+ * Ordered and capped so a sitemap can never grow past what the spec allows.
+ * At 50,000 URLs this would need splitting into an index; the launch area has
+ * a few hundred doctors, so the cap is a guard rail rather than a plan.
+ */
+export interface IndexableDoctor {
+  id: number;
+  created_at: string;
+}
+
+const SITEMAP_URL_CAP = 10_000;
+
+export async function listIndexableDoctors(): Promise<IndexableDoctor[]> {
+  const p = getPool();
+  if (!p) return [];
+
+  try {
+    const { rows } = await p.query(
+      `SELECT id, created_at FROM doctors
+       WHERE is_sample = false
+       ORDER BY id
+       LIMIT ${SITEMAP_URL_CAP}`
+    );
+    return rows.map((r) => ({ id: Number(r.id), created_at: String(r.created_at) }));
+  } catch {
+    // A sitemap is a nice-to-have; a 500 on /sitemap.xml because the database
+    // blinked is not. The two static entries still get served.
+    return [];
+  }
+}
+
+/**
  * The most doctors one search will consider.
  *
  * This is a truncation *before* ranking, and truncation is by distance while

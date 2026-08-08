@@ -223,9 +223,11 @@ changes a TrustScore number or an emergency red flag must be recorded there.**
 - **`/api/notify` needs somewhere to send from.** The addresses land in
   `launch_notifications` and nothing reads that table yet. A list nobody emails is a
   promise nobody keeps.
-- `robots.ts` and `sitemap.ts` exist and `/` and `/find` have their own titles, but
-  there is still **no per-doctor metadata and no `Physician` structured data** — every
-  profile shares one title and cannot rank for anything.
+- Doctor profiles now carry their own title, description, canonical and `Physician`
+  structured data (`apps/web/src/lib/structured-data.ts`). **Sample doctors are
+  `noindex` and emit no markup at all**, and profiles enter `sitemap.xml` only when
+  `is_sample` is false — so none of this publishes anything until the data is real.
+  No `aggregateRating` is emitted, deliberately; see the file header for why.
 - `llm-routing.ts` now has a suite (`apps/web/test/`), but it is still the only tested
   module outside `packages/core`. The API routes, the rate limiter and the search-context
   layer have none.
