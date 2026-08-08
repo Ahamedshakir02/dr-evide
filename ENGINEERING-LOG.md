@@ -12,6 +12,115 @@ Rules for this file:
 
 ---
 
+## 2026-08-09 — the app runs on a screen, and two plans meet reality
+
+Six things, but two of them are the entry: the emergency screen was seen on a
+small phone for the first time, and the font licence was read instead of assumed.
+Both changed what got built.
+
+### CALL 108 was below the fold on a budget phone
+
+An Android SDK and a Pixel AVD turned out to be on this machine, so the mobile
+screens were finally seen running rather than reasoned about. At 411×923dp
+everything looked right. Forced to **360×640dp** — the cheap Android this product
+is built for — the emergency screen was the warning and nothing else. **CALL 108
+was entirely off-screen.** Someone reading "don't wait — get help now" had to
+scroll an unfamiliar red screen, mid-cardiac-event, to find the ambulance number.
+
+The screen had been one ScrollView with a flexible spacer, which is fine at any
+height the designer happened to look at. The actions are now a fixed footer and
+cannot be scrolled away; the message above them gives up height instead. That is
+the right sacrifice — *why* it is an emergency matters less than being able to act
+on it. It fixed the tall screen too, where the "this isn't an emergency" escape
+hatch had been clipped mid-line on first paint and nobody had noticed.
+
+Pinning the buttons alone then pushed the **Malayalam headline** off the bottom,
+which breaks the one thing this screen exists to do. So below 700dp the message
+steps down a size and the decorative warning disc is dropped entirely. **The disc
+goes before a word of either language does**: a full-bleed red field already says
+"urgent", and a Malayalam reader should not have to scroll to find the sentence
+written for them.
+
+**Considered and rejected:** letting the body text scroll and calling it done. It
+looked acceptable in a screenshot and it silently made the bilingual promise
+conditional on screen height.
+
+An emulator is not hardware. It says nothing about real rasterisation, touch
+targets in a hand, or a four-year-old midrange device under load. It was still
+enough to find a bug that reading the file for two sessions had not.
+
+### The typefaces cannot be self-hosted — the licence says so
+
+Self-hosting Clash Display and General Sans has been on the list for two entries:
+it removes a third-party request on patchy connections and stops a font CDN seeing
+readers' IPs. The files were downloaded and the CSS was half-rewritten before the
+ITF Free Font License was actually read.
+
+It forbids this. Use is granted "in any media, at any scale", but redistribution is
+not — explicitly including "uploading them in a public server" — and transmitting
+the files "over the Internet in font serving" is called out separately. A `.woff2`
+under `public/` is both. Fontshare's API is not a shortcut around doing it
+properly; **for these faces it is the only compliant way to get them onto a page.**
+
+The files were deleted. If the privacy argument outweighs these particular
+typefaces, the way through is a different pair under the SIL Open Font License,
+which permits self-hosting outright — a brand decision, not an engineering one.
+
+### The share card, built inside what the licence does allow
+
+The same licence is explicit that *output* is unrestricted: logos, graphic
+elements, "static images". So `scripts/generate-og.mjs` downloads the fonts at
+generation time, converts every string to outlines, and commits a PNG that
+contains no font software. Run by hand like the icons.
+
+Two bugs, both found by looking at the image rather than the exit code.
+opentype.js 2.0.0's `toPathData()` writes literal `NaN` into the middle of the
+path for this tagline at every rounding setting, from commands that are all finite
+— librsvg stops drawing at the first bad coordinate, so "Find the right doctor near
+you" rendered as "Fin" and the generator reported success. And Next merges metadata
+shallowly, so `/` declaring its own `openGraph` dropped the layout's image
+entirely: **the most shared URL on the site was the one page with no card.**
+
+### What the profiles now say, and what they refuse to
+
+Every doctor page has its own title, description, canonical and `Physician`
+markup. The interesting part is the refusals. A sample doctor emits **no markup at
+all** and is `noindex`, gated on the `is_sample` column rather than the "(SAMPLE)"
+in the name, because someone will edit that out one day. Credential claims appear
+only for a verified registration — nothing is asserted here that
+`credential_provenance` cannot answer for. And **no `aggregateRating`**, though we
+hold the data and it is the highest-value markup on a page like this: the review
+terms are unreviewed, the number displayed is an average times an authenticity
+factor and so is not a rating anyone else would recognise, and TrustScore would
+lose the explanation that makes it honest the moment it became stars.
+
+### Tests reached outside core for the first time
+
+`llm-routing.ts` was the riskiest untested code in the repo. 67 cases now cover
+malformed JSON, wrong shapes, invented departments, and content a model was talked
+into emitting — including that **an emergency message shown to a user is always
+ours**, never the model's. Confirmed the suite has teeth before trusting it:
+moving the red-flag check after the model call fails 2 tests, bypassing the zod
+schema fails 11.
+
+The rate limiter moved to Redis behind the same interface, degrading to memory when
+Redis is unreachable rather than failing open (unguarded spend) or closed (site
+down). Writing its tests found the bug worth having them for: a malformed reply
+destructured to `undefined`, `undefined > limit` is false, and the endpoint
+silently stopped being metered — the exact failure the module prevents, arriving as
+a success.
+
+**None of this touches a TrustScore number or an emergency red flag.**
+`SCORE_VERSION` stays `1.0.0`, the golden tests are untouched, and the emergency
+*detection* is unchanged — the emergency screen's **layout** changed, not what
+trips it.
+
+**Still open:** the Malayalam is still unreviewed by a native speaker. The Redis
+path is tested against a mocked client only, with no daemon on this machine. And
+the app has still never been seen on physical hardware.
+
+---
+
 ## 2026-08-08 — the brand arrives, and the app learns Malayalam
 
 Four things were true at once: the site's typefaces had never loaded, the PWA could
