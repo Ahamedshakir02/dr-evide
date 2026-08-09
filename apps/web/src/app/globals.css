@@ -28,6 +28,18 @@ body {
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
+  /* Malayalam words are long and the browser will not break one, so a single
+     word can overrun its container on a narrow phone. `break-word` lets it
+     break rather than spill.
+
+     Deliberately not `anywhere`: that also lowers the element's min-content
+     width, which sounds like the stronger fix and is the wrong one here. It
+     tells every flex and grid parent that any text may be squeezed to one
+     character, and the first thing that happened was the top bar squeezing
+     the wordmark into "Dr / Evid / e". What was actually forcing the page
+     sideways was `white-space: nowrap` on the controls, fixed at the bottom
+     of this file. */
+  overflow-wrap: break-word;
 }
 
 a { color: var(--accent-text); text-decoration: none; }
@@ -127,6 +139,31 @@ html[lang="ml"] .topbar__nav { display: none; }
   html[lang="ml"] .topbar__nav { display: flex; }
 }
 .topbar__cta { height: 38px; }
+
+/* ── The narrow-phone step ──────────────────────────────────────────
+   Measured the same way as the nav above, with the real faces loaded:
+   the bar needs 398px of content in English and 454px in Malayalam.
+   Below that the whole document scrolled sideways — on 320, 360 and
+   390px, which is most of the launch area and the 360px budget Android
+   this product is actually for.
+
+   The button loses its label rather than the bar losing the button.
+   "Find a doctor" is the one control that must not go behind a menu,
+   and the magnifier alone still reads as search; the accessible name
+   is on the anchor, so nothing is lost to a screen reader. That puts
+   the bar at 302px in both languages, which fits the narrowest phone
+   in service.
+
+   Two breakpoints again, for the same reason the nav has two: the
+   Malayalam label is 56px longer and one number cannot fit both. */
+@media (max-width: 420px) {
+  .topbar__cta-label { display: none; }
+  .topbar__cta { width: 38px; padding: 0; justify-content: center; }
+}
+@media (max-width: 480px) {
+  html[lang="ml"] .topbar__cta-label { display: none; }
+  html[lang="ml"] .topbar__cta { width: 38px; padding: 0; justify-content: center; }
+}
 
 /* ── Language toggle ────────────────────────────────────────────────
    Two buttons rather than a select: there are exactly two languages and
@@ -848,6 +885,57 @@ input[type="range"]:focus-visible { outline: none; box-shadow: var(--focus-ring)
 @keyframes skeleton-sweep {
   from { background-position: 100% 50%; }
   to   { background-position: 0 50%; }
+}
+
+/* ═══ Narrow phones: let a translated label wrap ═══════════════════
+   `white-space: nowrap` on a control is right in English, where every
+   label on this site is one or two short words. In Malayalam it is
+   what put a sideways scrollbar on every page below 400px: nowrap
+   makes a label unbreakable, an unbreakable label sets the minimum
+   width of its button, and the widest button sets the minimum width
+   of the grid, the shell, and the document. "ശരിയായ ഡോക്ടറെ കണ്ടെത്തൂ"
+   in the primary button on /find measured 385px on a 320px screen.
+
+   `overflow-wrap: anywhere` on body cannot reach these — nowrap wins —
+   so the controls that carry translated copy give up the rule at phone
+   widths. `height` becomes `min-height` in the same breath, because a
+   button that is allowed to wrap and still fixed at 44px would spill
+   its own label instead.
+
+   Nothing here forces a wrap. A label that already fits renders at
+   exactly the height it did before, so the English design is unchanged
+   at every width — this only decides what happens when a label cannot
+   fit, and a two-line button beats a page that scrolls sideways. */
+@media (max-width: 480px) {
+  .sh-btn {
+    white-space: normal;
+    height: auto;
+    min-height: 44px;
+    padding-block: 8px;
+    line-height: 1.25;
+  }
+  .sh-btn--sm { height: auto; min-height: 36px; }
+  .sh-btn--lg { height: auto; min-height: 52px; }
+
+  .pill {
+    white-space: normal;
+    height: auto;
+    min-height: 26px;
+    padding-block: 4px;
+    line-height: 1.3;
+  }
+
+  .score-band,
+  .radius-toolbar__label,
+  .radius-toolbar__count { white-space: normal; }
+
+  /* The one place that still needs the stronger rule. A doctor card is an
+     avatar and a score ring that cannot shrink either side of a column of
+     Malayalam, so the longest word in the specialty line — "ഫിസിഷ്യൻ" and
+     friends — sets the card's floor at 305px against 280px of room. Scoped
+     to the card so it cannot reach the wordmark, which is the element that
+     made a global `anywhere` a bad trade. */
+  .doc-card { overflow-wrap: anywhere; }
 }
 
 /* Results cards arrive one-by-one — the single motion moment per view. */

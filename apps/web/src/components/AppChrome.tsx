@@ -74,9 +74,16 @@ export function AppChrome({
                 landing page the action wins the space, everywhere else the
                 page itself is the search and the context is worth more. */}
             {onLanding ? (
-              <a className="sh-btn sh-btn--primary sh-btn--sm topbar__cta" href="/find">
+              // The label is a span so the stylesheet can drop it on a narrow
+              // phone and leave the button — see .topbar__cta-label. The
+              // aria-label carries the name once the text is gone.
+              <a
+                className="sh-btn sh-btn--primary sh-btn--sm topbar__cta"
+                href="/find"
+                aria-label={c.nav.find}
+              >
                 <Search size={15} aria-hidden="true" />
-                {c.nav.find}
+                <span className="topbar__cta-label">{c.nav.find}</span>
               </a>
             ) : (
               <span className="sh-tag topbar__place">

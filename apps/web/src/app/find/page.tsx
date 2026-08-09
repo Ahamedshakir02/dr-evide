@@ -287,10 +287,14 @@ export default function Find() {
       </div>
 
       {/* ── Departments ─────────────────────────────────────────── */}
+      {/* No `white-space: nowrap` on the label. It kept the English "or pick a
+          department" on one line between the two rules, and in Malayalam it
+          made a decorative divider the widest thing on the page — 385px of
+          hard minimum, which scrolled the whole document sideways on every
+          phone under 400px. The rules either side are flexible and shrink
+          first, so the line still holds together wherever it fits. */}
       <div className="rule-row" style={{ margin: "40px 0 18px" }}>
-        <span className="sh-eyebrow" style={{ whiteSpace: "nowrap" }}>
-          {t.orPickDepartment}
-        </span>
+        <span className="sh-eyebrow">{t.orPickDepartment}</span>
       </div>
 
       <div className="specialty-grid">
