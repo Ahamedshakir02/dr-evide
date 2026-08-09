@@ -12,6 +12,116 @@ Rules for this file:
 
 ---
 
+## 2026-08-10 — both apps driven at once, and Malayalam turns out to break the layout
+
+The previous entry got the mobile app onto a screen. This one got **both** apps onto
+one, at the same time, and drove them: the website through a headless Chrome over the
+DevTools protocol at eight widths in both languages, the app on the Pixel_10 AVD with
+every screen tapped through. Nothing here changes a TrustScore number or an emergency
+red flag. `SCORE_VERSION` stays `1.0.0`.
+
+The finding is one sentence: **in Malayalam, every page on the website scrolled
+sideways on every phone narrower than 400px.** In English, none of them did. That is
+why two sessions of reading these files did not catch it — and it is the wrong
+language in this product to break, since the reason Malayalam exists here is the
+reader who has the least patience for a broken page.
+
+### The cause was three layers below where it showed
+
+Chasing the visibly-too-wide element led nowhere: on `/find` everything measured
+exactly 385px, including elements with no styling of their own. Everything was that
+wide because their *container* was, and the container was that wide because of one
+rule, three levels down — `white-space: nowrap` on `.sh-btn`.
+
+The chain: nowrap makes a label unbreakable → an unbreakable label is the button's
+minimum width → the button is a grid item, so it is the grid's minimum width → and so
+the shell's, and the document's. The primary button on `/find` reads "ശരിയായ ഡോക്ടറെ
+കണ്ടെത്തൂ" and measured **385px on a 320px screen**. The same rule on `.pill` and
+`.score-band` did the same to `/results` through the doctor card.
+
+So the controls that carry translated copy give up `nowrap` below 480px, and their
+fixed `height` becomes `min-height` in the same change — a button allowed to wrap and
+still pinned to 44px would spill its own label. Nothing forces a wrap: a label that
+already fits renders at exactly the height it did before, so the English design is
+untouched at every width.
+
+**Considered and rejected: `overflow-wrap: anywhere` on `body`.** It is the rule that
+actually lowers an element's min-content width, it looked like the one-line fix, and
+it was wrong. It tells *every* flex and grid parent that *any* text may be squeezed to
+a single character, and the first thing that happened was the top bar squeezing the
+wordmark to "Dr / Evid / e". It survives in exactly one place — `.doc-card`, scoped so
+it cannot reach the wordmark — because a card is an avatar and a score ring that
+cannot shrink either side of a column of Malayalam, and nothing else would fit it in
+280px. The global rule is `break-word`, which permits a wrap without inviting a
+squeeze.
+
+The top bar needed its own answer: it is not one long word but three controls, needing
+398px in English and 454px in Malayalam. The "Find a doctor" button drops its label and
+keeps the magnifier below 420px — 480px in Malayalam, where the label is 56px longer,
+the same two-breakpoint shape the nav above it already uses. **The button loses its
+label rather than the bar losing the button**: the search is the one control that must
+not go behind a menu, and the accessible name moves to the anchor so a screen reader
+loses nothing.
+
+### The app had the same bug, in its own idiom
+
+Not a coincidence — the same designs, and Malayalam is long in both. At 411dp and the
+default font scale, an ordinary phone:
+
+- The home top bar took its width from the wrong side, squeezing the language toggle
+  until "English" rendered as **"Englis"** — on the one control a reader who cannot
+  read the current language depends on to escape it. The lockup shrinks now; the
+  control does not.
+- The Malayalam line under the wordmark was clipped to "ഡോക്ടർ", because it was the
+  one Malayalam style in the app with no line height. The script stacks vowel signs
+  above and below the baseline and a line box measured for Latin cuts them off.
+- The radius card put "Within 5 km" and "2 doctors found" at either end of a row that
+  fits neither in Malayalam, so the count ran off the card and off the screen —
+  rendering as "5 km2 ഡോക്ടർമാരെ കണ്ടെത്ത" with the gap collapsed and the last word
+  cut in half. The row wraps now.
+
+### Two things that were not broken, and one that was
+
+`/results` was the only route on the site with no title of its own, inheriting the root
+default — the front page's string, on the page showing search results. It has a layout
+now, like `/find`, and states `noindex, follow`, which is what `sitemap.ts` already
+decided by omission and says why: the search reads its context from sessionStorage, so
+a crawler fetching it cold gets the empty state.
+
+The footer's `tel:108` measured **20×16px** — the smallest target on every page, on the
+site whose own advice two words earlier is to call it. Now 44×47, with the padding
+doing the work and a negative margin giving the space back to the line box, so the
+disclaimer still sets as one paragraph.
+
+Two things looked like bugs and were not, which is worth recording so the next person
+does not re-open them. The emergency alert on `/find` appeared not to fire; it fires,
+and the first test simply read the DOM before the fetch resolved. The emergency screen
+in the app shows its last Malayalam line half-cut behind the CALL 108 card; it scrolls,
+which is exactly what the previous entry decided it should do — the actions are pinned
+and the message gives up the height.
+
+### Verification
+
+`npm run verify` clean throughout: integrity gate 12/0, four workspace typechecks,
+eslint, 249 tests.
+
+Driven, not reasoned about:
+
+| Surface | Checked |
+|---|---|
+| `/`, `/find`, `/results`, `/doctor/[id]` | 320/360/390/414/430/520/768/1280px × en + ml — no horizontal overflow anywhere |
+| Red flag on `/find` | Alert renders, takes focus, `tel:108` present; `/api/route-symptom` returns `emergency: true` with helplines |
+| Ordinary symptom | Routes to `/results?specialty=dermatology`, cards render |
+| Language toggle | `<html lang>` flips, copy changes, survives navigation to `/results` and `/doctor` |
+| 404, empty state, profile actions | Department links, widen button, `tel:` and Maps links all present and correct |
+| App: home → results → profile → emergency | All four screens, both languages, on Pixel_10 |
+
+**Still open, unchanged:** the Malayalam is unreviewed by a native speaker; the Redis
+path has still only been tested against a mock; neither app has been on physical
+hardware. An emulator and a headless Chrome are still not a phone in a hand.
+
+---
+
 ## 2026-08-09 — the app runs on a screen, and two plans meet reality
 
 Six things, but two of them are the entry: the emergency screen was seen on a

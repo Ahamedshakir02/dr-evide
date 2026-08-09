@@ -151,7 +151,19 @@ translated.
 
 Malayalam is never just a different string in the same style: Clash Display and
 General Sans carry no Malayalam glyphs, so any style naming them renders the script
-as blank boxes. Every translated line needs its Noto Sans Malayalam counterpart.
+as blank boxes. Every translated line needs its Noto Sans Malayalam counterpart, and
+a line height with it — the script stacks vowel signs above and below the baseline,
+and a line box measured for Latin clips them.
+
+**Malayalam is also longer, and that is a layout problem, not a copy problem.** A
+label that fits in English can be three times the width in Malayalam, and
+`white-space: nowrap` turns that into a hard minimum width — for the control, then
+its grid, then the page. That is how every page on the site came to scroll sideways
+below 400px in Malayalam while English sat comfortably inside 320px. The controls
+that carry translated copy relax `nowrap` below 480px (`globals.css`, bottom), and
+the top bar drops its button's label before it drops the button. **Check both
+languages at 320px before calling a layout done** — English alone will not show you
+this.
 
 ## Typefaces — and why they are not self-hosted
 
@@ -243,11 +255,14 @@ changes a TrustScore number or an emergency red flag must be recorded there.**
   starting with the emergency copy. This is the last blocker with a life at the end of
   it — the app and the website are now both fully translated, which means a
   mistranslation reaches everyone rather than nobody.
-- The mobile screens have now been **seen running, on an emulator** (Pixel_10 AVD, and
-  again forced to 360×640dp) — which caught the emergency screen putting CALL 108 below
-  the fold on a small phone. An emulator is not hardware: it says nothing about real
-  font rasterisation, touch targets in a hand, or performance on a four-year-old
-  midrange device. Still worth half an hour on a real phone before shipping.
+- Both apps have now been **driven, not just read**: the website through a headless
+  Chrome at 320–1280px in both languages, the app on a Pixel_10 AVD through home,
+  results, profile and the emergency interrupt. That caught CALL 108 below the fold on
+  a 360×640dp phone, and later the Malayalam layout collapse described above. An
+  emulator and a headless browser are still not a phone in a hand: neither says
+  anything about real font rasterisation, touch targets between finger and glass, or
+  performance on a four-year-old midrange device. Still worth half an hour on a real
+  phone before shipping.
 - **The store badges on `/` are placeholders.** They are deliberately inert until the
   apps are published; wire them up in `site-copy.ts` and `StoreBadges.tsx` at the same
   time, or the page starts overstating.
