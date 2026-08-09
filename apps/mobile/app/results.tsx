@@ -108,13 +108,20 @@ export default function ResultsScreen() {
 
         {/* radius control */}
         <View style={s.radiusCard}>
+          {/* Wraps rather than overflows. In English "Within 5 km" and "2
+              doctors found" sit either end of one line; in Malayalam the two
+              labels are three times as long and, with nothing allowed to give,
+              the count ran off the right edge of the card and off the screen —
+              "5 km2 ഡോക്ടർമാരെ കണ്ടെത്ത…". flexWrap drops the count onto its
+              own line when it cannot share one, and flexShrink lets each side
+              wrap internally before that. */}
           <View style={s.radiusHead}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
+            <View style={s.radiusWithin}>
               <MapPin size={16} color={color.accentText} />
-              <Text style={[s.radiusLabel, ml && s.radiusLabelMl]}>{t.within} </Text>
+              <Text style={[s.radiusLabel, ml && s.radiusLabelMl]}>{t.within}</Text>
               <Text style={s.radiusValue}>{radiusKm} km</Text>
             </View>
-            <Text style={s.count}>
+            <Text style={[s.count, ml && s.countMl]}>
               <Text style={{ fontFamily: font.monoBold, color: color.text }}>{doctors.length}</Text>
               {" "}
               {t.doctorsFound(doctors.length)}
@@ -225,12 +232,22 @@ const s = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    flexWrap: "wrap",
+    columnGap: space[3],
+    rowGap: space[1],
     marginBottom: space[2],
   },
-  radiusLabel: { fontFamily: font.bodySemibold, fontSize: text.sm, color: color.text },
-  radiusLabelMl: { fontFamily: font.malayalam, fontSize: 12 },
+  radiusWithin: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    flexShrink: 1,
+  },
+  radiusLabel: { fontFamily: font.bodySemibold, fontSize: text.sm, color: color.text, flexShrink: 1 },
+  radiusLabelMl: { fontFamily: font.malayalam, fontSize: 12, lineHeight: 20 },
   radiusValue: { fontFamily: font.monoBold, fontSize: text.sm, color: color.accentText },
-  count: { fontFamily: font.body, fontSize: 13, color: color.textMuted },
+  count: { fontFamily: font.body, fontSize: 13, color: color.textMuted, flexShrink: 1 },
+  countMl: { fontFamily: font.malayalam, fontSize: 12, lineHeight: 20 },
   offlineRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: space[2] },
   offlineText: { fontFamily: font.body, fontSize: text.xs, color: color.warningText },
   offlineTextMl: { fontFamily: font.malayalam, fontSize: 11, lineHeight: 20 },
