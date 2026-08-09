@@ -65,7 +65,11 @@ export default function HomeScreen() {
       <ScrollView contentContainerStyle={{ paddingBottom: space[8] }} keyboardShouldPersistTaps="handled">
         {/* top bar */}
         <View style={s.topbar}>
-          <View>
+          {/* The lockup yields the width, never the control. Without this the
+              row squeezed the toggle instead: "English" rendered as "Englis"
+              with the h cut off, on the control whose job is to let someone
+              who cannot read the current language get out of it. */}
+          <View style={s.brand}>
             <Text style={s.wordmark}>Dr Evide</Text>
             <Text style={s.wordmarkMl}>ഡോക്ടർ എവിടെ?</Text>
           </View>
@@ -182,14 +186,23 @@ const s = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    gap: space[3],
     paddingHorizontal: 22,
     paddingTop: 14,
     paddingBottom: 6,
   },
+  brand: { flexShrink: 1 },
   wordmark: { fontFamily: font.display, fontSize: 22, color: color.text, lineHeight: 26 },
   wordmarkMl: {
     fontFamily: font.malayalam,
     fontSize: 14,
+    /**
+     * Malayalam stacks vowel signs above and below the baseline, and a line
+     * box sized for Latin at 14px clips them — this line lost its descenders
+     * to the row below it. Same reason every other Malayalam style in this
+     * app names a line height.
+     */
+    lineHeight: 22,
     color: color.accentText,
     marginTop: 2,
   },

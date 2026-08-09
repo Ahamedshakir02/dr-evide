@@ -61,6 +61,13 @@ const s = StyleSheet.create({
     backgroundColor: color.surface2,
     borderWidth: 1,
     borderColor: color.border,
+    /**
+     * Never squeezed by whatever sits beside it. A row that ran out of width
+     * took it from here first and truncated "English" to "Englis" — on the
+     * one control a reader who cannot read the current language depends on.
+     * The lockup beside it shrinks instead.
+     */
+    flexShrink: 0,
   },
   btn: {
     // 36px rather than the 44 a standalone target wants: the two halves sit
