@@ -266,6 +266,20 @@ html[lang="ml"] .topbar__nav { display: none; }
   border-top: 1px solid var(--border);
 }
 .site-footer__legal a { color: var(--text-muted); font-weight: var(--fw-semibold); }
+/* The one link on the site that is not navigation.
+   "108" set inline in a sentence measured 20x16px — the smallest target on
+   every page, on the site whose own advice, two words earlier, is to call it.
+   The padding takes it past the 44px minimum and the negative margin gives the
+   space back to the line box, so the disclaimer still sets as one paragraph.
+   Underlined because at this size and weight it did not read as a link at all. */
+.site-footer__legal a[href^="tel:"] {
+  display: inline-block;
+  padding: 14px 12px;
+  margin: -14px -6px;
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 
 /* ═══ Shared bits ═══════════════════════════════════════════════════ */
 
