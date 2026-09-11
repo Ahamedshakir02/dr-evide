@@ -72,12 +72,15 @@ const SECURITY_HEADERS = [
    *
    * /results and /doctor/[id] carry condition keywords derived from a health
    * complaint. Every OpenStreetMap tile request — roughly twenty per map view —
-   * and every click through to Google Maps was sending that URL as `Referer` to
-   * a third party. `no-referrer` is deliberately absolute rather than
-   * `same-origin`: there is no case where another host needs to know which page
-   * of this product someone came from.
+   * and every click through to Google Maps must never receive that page URL:
+   * paths and query strings can expose an inferred medical specialty.
+   *
+   * The public OpenStreetMap tile service, however, blocks completely anonymous
+   * image traffic. `strict-origin` is the narrowest policy that lets it identify
+   * this application: cross-origin requests receive only this site's origin,
+   * never the path, query string, coordinates, or routed conditions.
    */
-  { key: "Referrer-Policy", value: "no-referrer" },
+  { key: "Referrer-Policy", value: "strict-origin" },
 
   { key: "Content-Security-Policy", value: CSP },
   { key: "X-Content-Type-Options", value: "nosniff" },
