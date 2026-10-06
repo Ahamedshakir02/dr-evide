@@ -1,10 +1,10 @@
-# Dr Evide — ഡോക്ടർ എവിടെ?
+# Dr Evide
 
 Find the right doctor near you. Describe your problem in your own words, get routed to the
 correct department, and see doctors ranked by **verified credentials, experience, and authentic
 reviews — never by who paid**.
 
-Launch area: Edappal, Kerala (and surrounding towns — Ponnani, Kuttippuram, Valanchery, Tirur).
+Built for everyone, in English first (Malayalam is an optional toggle). Launch area: Edappal, Kerala (and surrounding towns — Ponnani, Kuttippuram, Valanchery, Tirur).
 
 ## Quick start (zero setup)
 
