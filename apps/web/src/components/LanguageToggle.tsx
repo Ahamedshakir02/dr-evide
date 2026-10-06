@@ -1,7 +1,7 @@
 "use client";
 
 import { LANGS, LANG_LABELS } from "@dr-evide/core";
-import { useLang } from "@/lib/lang";
+import { MALAYALAM_ENABLED, useLang } from "@/lib/lang";
 
 /**
  * Two buttons, not a dropdown.
@@ -13,6 +13,8 @@ import { useLang } from "@/lib/lang";
  */
 export function LanguageToggle() {
   const { lang, setLang, t } = useLang();
+
+  if (!MALAYALAM_ENABLED) return null;
 
   return (
     <div className="lang-toggle" role="group" aria-label={t.languageLabel}>

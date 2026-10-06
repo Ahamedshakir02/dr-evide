@@ -30,6 +30,14 @@ const LangContext = createContext<LangValue>({
   setLang: () => {},
 });
 
+/**
+ * Malayalam is switched off until a native speaker has reviewed it (see the
+ * README). Set NEXT_PUBLIC_ENABLE_MALAYALAM=true to offer it. Off, the toggle is
+ * hidden and a language remembered from an earlier visit is ignored, so nobody
+ * is stranded in a language they cannot switch out of.
+ */
+export const MALAYALAM_ENABLED = process.env.NEXT_PUBLIC_ENABLE_MALAYALAM === "true";
+
 export function LangProvider({ children }: { children: React.ReactNode }) {
   /**
    * Starts at the default and settles after mount. localStorage does not exist
@@ -41,7 +49,7 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       const stored = localStorage.getItem(KEY);
-      if (isLang(stored)) setLangState(stored);
+      if (MALAYALAM_ENABLED && isLang(stored)) setLangState(stored);
     } catch {
       // Storage disabled. English is a working answer, not a failure.
     }

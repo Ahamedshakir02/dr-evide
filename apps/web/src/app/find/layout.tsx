@@ -8,7 +8,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Find a doctor",
   description:
-    "Describe your symptoms in Malayalam or English and get routed to the right department, with doctors near Edappal ranked by verified credentials.",
+    "Describe your symptoms in your own words and get routed to the right department, with doctors near Edappal ranked by verified credentials.",
   alternates: { canonical: "/find" },
 };
 
