@@ -167,7 +167,7 @@ const en: Strings = {
     "Tell us what's bothering you. We route you to the right department, then rank nearby doctors by a transparent TrustScore built from verified credentials and real reviews.",
   symptomLabel: "What's bothering you?",
   symptomPlaceholder: "e.g. My hair is falling a lot lately…",
-  bilingualHint: "Malayalam & English both work",
+  bilingualHint: "Type it the way you would say it",
   findDoctor: "Find the right doctor",
   finding: "Finding…",
   orPickDepartment: "Or pick a department",
