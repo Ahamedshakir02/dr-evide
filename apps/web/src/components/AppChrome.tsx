@@ -119,6 +119,8 @@ export function AppChrome({
             <a href="/#trust">{c.footer.howLink}</a>
             <a href="/#faq">{c.faq.eyebrow}</a>
             <a href="/api/health">{c.footer.statusLink}</a>
+            <a href="/privacy">Privacy</a>
+            <a href="/privacy#doctors">Are you a doctor?</a>
           </nav>
         </div>
 
