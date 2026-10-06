@@ -71,7 +71,6 @@ export default function HomeScreen() {
               who cannot read the current language get out of it. */}
           <View style={s.brand}>
             <Text style={s.wordmark}>Dr Evide</Text>
-            <Text style={s.wordmarkMl}>ഡോക്ടർ എവിടെ?</Text>
           </View>
           {/* This space held a static "Edappal ⌄" tag: a plain View with a
               dropdown chevron and no handler, so it advertised a location
