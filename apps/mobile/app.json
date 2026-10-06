@@ -28,7 +28,13 @@
       "expo-router",
       "expo-font",
       "expo-splash-screen",
-      "expo-dev-client"
+      "expo-dev-client",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Dr Evide uses your location only to measure how far each doctor is from you. It is never stored and never leaves your phone."
+        }
+      ]
     ],
     "scheme": "drevide",
     "experiments": {

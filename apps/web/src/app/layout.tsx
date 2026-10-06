@@ -1,12 +1,60 @@
 import type { Metadata, Viewport } from "next";
-import { MapPin } from "lucide-react";
+import { isSampleMode } from "@dr-evide/db";
+import { AppChrome } from "@/components/AppChrome";
+import { LangProvider } from "@/lib/lang";
+import { OG_IMAGE, TWITTER_IMAGE } from "@/lib/og";
+import { SITE_URL } from "@/lib/site-url";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Dr Evide — find the right doctor near you",
+  /**
+   * A template, not a fixed string. Every page on this site used to share one
+   * title, so a doctor's profile and the front page were indistinguishable in
+   * a search result or a shared link. Pages that set their own title get it;
+   * `default` covers the ones that do not.
+   */
+  title: {
+    default: "Dr Evide — find the right doctor near you",
+    template: "%s · Dr Evide",
+  },
   description:
     "Tell us what's wrong in your own words and we'll show you the most qualified doctors near Edappal — ranked by verified credentials, never by who paid.",
   manifest: "/manifest.json",
+  metadataBase: new URL(SITE_URL),
+  applicationName: "Dr Evide",
+
+  /**
+   * The share card. Most links to this site travel through WhatsApp, where an
+   * unfurled card is the whole first impression and a missing one is a grey box.
+   *
+   * A committed PNG rather than a runtime `next/og` route: the brand faces are
+   * under a licence that does not permit shipping the font files, so they are
+   * downloaded at generation time by `npm run og` and only the image is stored.
+   * See scripts/generate-og.mjs.
+   */
+  openGraph: {
+    type: "website",
+    siteName: "Dr Evide",
+    locale: "en_IN",
+    images: OG_IMAGE,
+  },
+  twitter: { card: "summary_large_image", images: TWITTER_IMAGE },
+
+  /**
+   * The manifest carries the launcher icons; these are the browser's own.
+   * Both come from assets/brand/mark.svg via `npm run icons`, so the tab, the
+   * home screen and the install prompt cannot end up showing different marks.
+   *
+   * icon.svg first, with the PNG after it as the fallback for browsers that
+   * do not take SVG favicons.
+   */
+  icons: {
+    icon: [
+      { url: "/icons/icon.svg", type: "image/svg+xml" },
+      { url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
+  },
 };
 
 export const viewport: Viewport = {
@@ -28,32 +76,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
-        {/* Top bar — Dr Evide Web.dc.html:35-51 */}
-        <header className="topbar">
-          <div className="topbar__inner">
-            {/* Wordmark only. The Malayalam lockup "ഡോക്ടർ എവിടെ?" belongs to
-                the app's top bar (Dr Evide.dc.html:56) — the web design carries
-                the wordmark alone. The Malayalam webfont below still loads,
-                because people type Malayalam into the symptom box. */}
-            <a href="/" className="wordmark">
-              Dr Evide
-            </a>
-            <span className="sh-tag" style={{ height: 38, marginLeft: "auto" }}>
-              <MapPin size={16} aria-hidden="true" />
-              Edappal, Kerala
-            </span>
-          </div>
-        </header>
-
-        <main className="shell">{children}</main>
-
-        <footer className="site-footer">
-          <p>
-            Dr Evide helps you find a suitable doctor. It does not provide medical advice or
-            diagnosis. In an emergency, call <a href="tel:108">108</a>.
-          </p>
-          <p>Rankings are never paid for. No one can pay to rank higher.</p>
-        </footer>
+        {/*
+          `lang="en"` above is the server's best guess; LangProvider corrects
+          document.documentElement.lang once the stored preference is read.
+          It has to be right, not decorative — it decides which voice a screen
+          reader uses, and Malayalam announced under an English voice is worse
+          than not translating at all.
+        */}
+        {/* isSampleMode() is read here, on the server, so the footer's "none
+            of these people are real" line is a fact about this deployment
+            rather than a sentence someone has to remember to delete. */}
+        <LangProvider>
+          <AppChrome sampleMode={isSampleMode()}>{children}</AppChrome>
+        </LangProvider>
       </body>
     </html>
   );

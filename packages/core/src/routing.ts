@@ -59,6 +59,7 @@ export function emergencyResult(text: string): RoutingResult | null {
   return {
     emergency: true,
     emergency_message: match.message,
+    emergency_message_ml: match.messageMl,
     emergency_category: match.category,
     emergency_helplines: match.helplines,
     specialties: [],

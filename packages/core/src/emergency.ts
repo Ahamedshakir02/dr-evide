@@ -24,6 +24,16 @@ export interface Helpline {
 export interface EmergencyMatch {
   category: EmergencyCategory;
   message: string;
+  /**
+   * The same instruction in Malayalam.
+   *
+   * Carried alongside rather than resolved here, because this module is pure
+   * and knows nothing about who is reading. It is the one piece of copy in the
+   * product where a language the reader cannot follow is a safety failure
+   * rather than an inconvenience — and the launch area is one where a great
+   * many people read Malayalam far more comfortably than English.
+   */
+  messageMl: string;
   helplines: Helpline[];
   /** The red-flag terms that fired, for the UI and for logging. Never the raw user text. */
   matched: string[];
@@ -123,8 +133,14 @@ const MENTAL_HEALTH_TERMS: readonly string[] = [
 const MEDICAL_MESSAGE =
   "These symptoms may be a medical emergency. Please go to the nearest emergency department immediately or call 108 (free ambulance). Do not wait for an appointment.";
 
+const MEDICAL_MESSAGE_ML =
+  "ഈ ലക്ഷണങ്ങൾ ഒരു അടിയന്തര വൈദ്യസഹായം ആവശ്യമുള്ളതാകാം. ഉടൻ തന്നെ അടുത്തുള്ള അത്യാഹിത വിഭാഗത്തിലേക്ക് പോകുക, അല്ലെങ്കിൽ 108 (സൗജന്യ ആംബുലൻസ്) വിളിക്കുക. അപ്പോയിന്റ്മെന്റിനായി കാത്തിരിക്കരുത്.";
+
 const MENTAL_HEALTH_MESSAGE =
   "You do not have to face this alone, and help is available right now. Tele-MANAS (14416) is free, confidential, open 24/7, and answers in Malayalam. If you are in immediate danger, call 108 or go to the nearest emergency department.";
+
+const MENTAL_HEALTH_MESSAGE_ML =
+  "ഇത് ഒറ്റയ്ക്ക് നേരിടേണ്ടതില്ല, ഇപ്പോൾത്തന്നെ സഹായം ലഭ്യമാണ്. ടെലി-മനസ് (14416) സൗജന്യവും രഹസ്യാത്മകവുമാണ്, 24 മണിക്കൂറും തുറന്നിരിക്കുന്നു, മലയാളത്തിൽ സംസാരിക്കാം. നിങ്ങൾ ഉടനടി അപകടത്തിലാണെങ്കിൽ 108 വിളിക്കുക അല്ലെങ്കിൽ അടുത്തുള്ള അത്യാഹിത വിഭാഗത്തിലേക്ക് പോകുക.";
 
 const MEDICAL_HELPLINES: Helpline[] = [{ label: "108 — free ambulance", number: "108" }];
 
@@ -148,6 +164,7 @@ export function detectEmergency(text: string): EmergencyMatch | null {
     return {
       category: "mental-health",
       message: MENTAL_HEALTH_MESSAGE,
+      messageMl: MENTAL_HEALTH_MESSAGE_ML,
       helplines: MENTAL_HEALTH_HELPLINES,
       matched: mental,
     };
@@ -164,6 +181,7 @@ export function detectEmergency(text: string): EmergencyMatch | null {
     return {
       category: "medical",
       message: MEDICAL_MESSAGE,
+      messageMl: MEDICAL_MESSAGE_ML,
       helplines: MEDICAL_HELPLINES,
       matched: [...new Set(medical)],
     };

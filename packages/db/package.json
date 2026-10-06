@@ -13,7 +13,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "setup": "node setup.mjs",
-    "seed": "node seed.mjs"
+    "seed": "node seed.mjs",
+    "import": "node import-doctors.mjs"
   },
   "dependencies": {
     "@dr-evide/core": "*",

@@ -22,8 +22,13 @@ const SKIP_DIRS = new Set(["node_modules", ".next", ".expo", "dist", "build", ".
 const CODE_FILE = /\.(ts|tsx|js|jsx|mjs|sql)$/;
 
 /**
- * Identifiers that would let money influence order. Matched as whole words so
- * "sponsored" fires but "responsored" — or prose about the pledge — does not.
+ * Identifiers that would let money influence order.
+ *
+ * Matched as whole words, so "sponsored" fires and "responsored" does not.
+ * Prose *does* fire — the landing page had to reword a sentence promising we
+ * would never do this, which is the right trade: a checker that understood
+ * context would be a checker that could be argued with, and "it's only in a
+ * string" is exactly the argument a paid-placement field would arrive wearing.
  */
 const FORBIDDEN = [
   "sponsored",

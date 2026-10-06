@@ -111,7 +111,7 @@ export function VerifiedPill({ verified, regNo }: { verified: boolean; regNo?: s
 export function SamplePill() {
   return (
     <View style={[s.pill, s.pillSample]}>
-      <Text style={[s.pillText, { color: color.warning }]}>Sample data</Text>
+      <Text style={[s.pillText, { color: color.warningText }]}>Sample data</Text>
     </View>
   );
 }
