@@ -22,6 +22,7 @@
     "verify": "npm run check:integrity && npm run typecheck && npm run lint && npm run test",
     "db:setup": "node packages/db/setup.mjs",
     "db:seed": "node packages/db/seed.mjs",
+    "db:import": "node packages/db/import-doctors.mjs",
     "notify:export": "node packages/db/export-notifications.mjs"
   },
   "devDependencies": {
