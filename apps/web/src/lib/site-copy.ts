@@ -141,7 +141,7 @@ const en: SiteCopy = {
   },
 
   hero: {
-    eyebrow: "Edappal, Kerala · ഡോക്ടർ എവിടെ?",
+    eyebrow: "Starting in Edappal, Kerala",
     titleLead: "The doctor you need,",
     titleEmphasis: "not the one who paid.",
     // "Advertising slots", not the more natural word for them: the integrity
@@ -149,13 +149,13 @@ const en: SiteCopy = {
     // codebase outright, prose included, and a marketing line is not a good
     // enough reason to carve a hole in the gate that protects the promise the
     // line is making.
-    sub: "Dr Evide asks what is bothering you — in Malayalam or English — routes you to the right department, and ranks the doctors near you on credentials we have actually checked. No advertising slots. No boosted profiles. There is nothing to buy.",
+    sub: "Dr Evide asks what is bothering you — in your own words — routes you to the right department, and ranks the doctors near you on credentials we have actually checked. No advertising slots. No boosted profiles. There is nothing to buy.",
     ctaFind: "Find a doctor now",
     ctaGet: "Get the app",
     proof: [
       "No paid placement, enforced in CI",
       "Emergency check runs on your phone",
-      "Malayalam and English",
+      "Plain-language search, no forms",
     ],
   },
 
@@ -187,7 +187,7 @@ const en: SiteCopy = {
       {
         icon: "pencil",
         title: "Describe it in your own words",
-        body: "Free-text symptom routing, built for how people actually talk. Malayalam, English, or Malayalam typed in English letters — the keyword sets for all three were written by hand, not scraped.",
+        body: "Free-text symptom routing, built for how people actually talk. Write it in plain English; Malayalam, and Malayalam typed in English letters, are understood too — the keyword sets were written by hand, not scraped.",
       },
       {
         icon: "siren",
@@ -211,8 +211,8 @@ const en: SiteCopy = {
       },
       {
         icon: "languages",
-        title: "It answers in the language you asked in",
-        body: "The website reads end to end in Malayalam, not just the search box. Asking someone to type Malayalam and then replying only in English fails the exact people the Malayalam was for.",
+        title: "English first, Malayalam one tap away",
+        body: "The site and app read in English by default. A full Malayalam version is one tap away in the top bar, for anyone who is more comfortable in it.",
       },
     ],
   },
@@ -301,8 +301,8 @@ const en: SiteCopy = {
         a: "No. Dr Evide helps you find a suitable doctor and nothing more. It does not diagnose, and it will tell you to call 108 rather than try when what you describe sounds like an emergency.",
       },
       {
-        q: "Why only Edappal?",
-        a: "Because a directory is worth nothing if it is thin. We would rather cover one rural block properly — including the towns people actually travel to — than list half of Kerala from an unverified scrape.",
+        q: "Why start in Edappal?",
+        a: "Because a directory is worth nothing if it is thin. We would rather cover one rural block properly — including the towns people actually travel to — than list a whole country from an unverified scrape. More areas follow as verified doctors do.",
       },
     ],
   },
@@ -316,7 +316,7 @@ const en: SiteCopy = {
     howLink: "How ranking works",
     sourceLink: "What it does",
     statusLink: "Service status",
-    area: "Edappal, Kerala — and Ponnani, Kuttippuram, Valanchery, Tirur.",
+    area: "Starting in Edappal, Kerala — and Ponnani, Kuttippuram, Valanchery, Tirur.",
     sampleNote: "Currently running on sample data. No doctor shown anywhere on this site is a real person.",
   },
 };
