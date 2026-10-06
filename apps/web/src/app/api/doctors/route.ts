@@ -41,6 +41,8 @@ export async function GET(req: NextRequest) {
 
   const doctors = await findDoctors({ specialty: slug, lat, lng, radiusKm: radius });
 
+  if (doctors.length === 0) count(`search.empty.${slug}`);
+
   // The year is passed in rather than read inside scoring, so the same search
   // always produces the same numbers — see RankingContext in @dr-evide/core.
   const asOfYear = new Date().getFullYear();

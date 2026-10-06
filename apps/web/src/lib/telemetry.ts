@@ -1,4 +1,5 @@
 import "server-only";
+import type { SpecialtySlug } from "@dr-evide/core";
 
 /**
  * Counters, and nothing else.
@@ -49,6 +50,12 @@ export type Counter =
    * applied, but per replica rather than across them.
    */
   | "ratelimit.degraded"
+  /**
+   * A search found no doctor in range. One counter per department, from a closed
+   * union, so it still cannot carry a payload: which specialty is empty is the
+   * next recruiting target, and nothing about who asked.
+   */
+  | `search.empty.${SpecialtySlug}`
   /** A launch-notification address was written (or was already there). */
   | "notify.stored"
   /** Someone asked to be notified on a deployment with no database to hold it. */
