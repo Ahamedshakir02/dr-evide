@@ -233,6 +233,8 @@ describe.skipIf(!hasDatabase)("admin API", () => {
         "doctor.verify",
         "doctor.unverify",
         "doctor.update",
+        // The approval that created the doctor (qa-report F3).
+        "application.approve",
       ]);
 
       // 7. "Delete me": gone from search, the profile, the console and the applications table.
