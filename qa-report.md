@@ -105,6 +105,12 @@ Not covered: the mobile app's offline state (Expo; no device in this sandbox).
 
 ### Frontend bugs
 
+All four are fixed (F1, F2, F4 on PR #5; F3 on PR #1) and re-checked in the browser
+on PR #5 + #1 + #3: the department and phone errors now read "Choose your department."
+and "Enter the clinic phone number.", the doctor's history starts with "Approved from
+listing application", and "Checked against" defaults to the state council when the
+doctor named one. `admin-history.test.ts` now runs in `npm run test:integration`.
+
 - **F1 (medium) — raw validation text shown to doctors.** Submitting the sign-up form
   without a department shows `Invalid enum value. Expected 'dermatology' | 'cardiology' |
   … received ''` under Department. Needs a plain message ("Choose your department"),
