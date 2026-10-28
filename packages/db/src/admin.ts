@@ -246,9 +246,15 @@ export async function unverifyDoctor(
   admin: Reviewer
 ): Promise<DoctorWriteResult> {
   return withTransaction(async (c) => {
-    const { rows } = await c.query(`SELECT is_sample FROM doctors WHERE id = $1 FOR UPDATE`, [id]);
+    const { rows } = await c.query(
+      `SELECT is_sample, nmc_verified FROM doctors WHERE id = $1 FOR UPDATE`,
+      [id]
+    );
     if (!rows[0]) return { status: "not_found" };
     if (rows[0].is_sample) return { status: "sample" };
+    // Nothing to withdraw: a "verification withdrawn" line for a doctor who
+    // was never verified would make the provenance history say something false.
+    if (!rows[0].nmc_verified) return { status: "ok" };
     await c.query(`UPDATE doctors SET nmc_verified = false, updated_at = now() WHERE id = $1`, [id]);
     // Append-only: the earlier "verified" row stays, and this one says it no longer holds.
     await c.query(
