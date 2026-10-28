@@ -141,7 +141,12 @@ export async function getDoctorForAdmin(id: number): Promise<AdminDoctorDetail |
     p.query(
       `SELECT l.action, u.name AS admin_name, l.detail, l.created_at
        FROM admin_audit_log l LEFT JOIN admin_users u ON u.id = l.admin_id
-       WHERE l.target_type = 'doctor' AND l.target_id = $1
+       -- The approval that created the doctor is logged against the
+       -- application, with the new doctor's id in detail; include it so the
+       -- history starts where the doctor did.
+       WHERE (l.target_type = 'doctor' AND l.target_id = $1)
+          OR (l.target_type = 'application' AND l.action = 'application.approve'
+              AND (l.detail->>'doctor_id')::int = $1)
        ORDER BY l.created_at DESC LIMIT 100`,
       [id]
     ),
