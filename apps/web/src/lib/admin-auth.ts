@@ -11,6 +11,8 @@ import {
   getAdminBySession,
   type AdminUser,
 } from "@dr-evide/db";
+import { rateLimit } from "./rate-limit";
+import { count } from "./telemetry";
 
 /**
  * Sign-in for the admin console.
@@ -94,20 +96,30 @@ export async function login(email: string, password: string): Promise<LoginResul
   return { ok: true, admin: { id: user.id, email: user.email, name: user.name }, token };
 }
 
+/**
+ * Every Set-Cookie for the session carries the same attributes. Browsers
+ * reject a `__Host-` cookie that is not Secure, so a sign-out that cleared it
+ * with bare attributes was silently ignored and the old token stayed in the
+ * browser.
+ */
+const COOKIE_ATTRS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "strict",
+  path: "/",
+} as const;
+
 export function setSessionCookie(res: NextResponse, token: string): void {
-  res.cookies.set(SESSION_COOKIE, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    path: "/",
-    maxAge: SESSION_TTL_MS / 1000,
-  });
+  res.cookies.set(SESSION_COOKIE, token, { ...COOKIE_ATTRS, maxAge: SESSION_TTL_MS / 1000 });
 }
 
 export async function logout(req: NextRequest, res: NextResponse): Promise<void> {
   const token = req.cookies.get(SESSION_COOKIE)?.value;
   if (token) await deleteAdminSession(sha256(token)).catch(() => {});
-  res.cookies.set(SESSION_COOKIE, "", { path: "/", maxAge: 0 });
+  res.cookies.set(SESSION_COOKIE, "", { ...COOKIE_ATTRS, maxAge: 0 });
+  // Drop cached admin responses on a shared machine. Not "storage": that would
+  // also wipe the public site's saved language and search on this origin.
+  res.headers.set("clear-site-data", '"cache"');
 }
 
 /** The signed-in admin for a server component or route, or null. */
@@ -131,6 +143,11 @@ export async function currentAdmin(): Promise<AdminUser | null> {
  * too — every browser sends one on a POST, so its absence means a script.
  */
 export function sameOrigin(req: NextRequest): boolean {
+  // Fetch metadata, where the browser sends it, is the browser's own verdict
+  // and cannot be set by page script.
+  const site = req.headers.get("sec-fetch-site");
+  if (site && site !== "same-origin") return false;
+
   const origin = req.headers.get("origin");
   if (!origin) return false;
   const allowed = new Set([req.nextUrl.origin]);
@@ -153,19 +170,43 @@ const json = (body: unknown, status: number) =>
  *     const auth = await requireAdmin(req);
  *     if (auth instanceof NextResponse) return auth;
  */
+/**
+ * Admin writes per admin per minute. Far above what a person clicking through
+ * the review queue does; low enough that a stolen session or a runaway script
+ * cannot rewrite or delete the whole directory before anyone notices.
+ */
+const WRITE_LIMIT = 60;
+const WRITE_WINDOW_MS = 60_000;
+
 export async function requireAdmin(req: NextRequest): Promise<AdminUser | NextResponse> {
-  if (req.method !== "GET" && req.method !== "HEAD" && !sameOrigin(req)) {
+  const write = req.method !== "GET" && req.method !== "HEAD";
+  if (write && !sameOrigin(req)) {
     return json({ error: "Cross-origin request refused." }, 403);
   }
   const token = req.cookies.get(SESSION_COOKIE)?.value;
-  if (!token) return json({ error: "Sign in required." }, 401);
+  // A real token is 43 base64url characters; anything else is not worth a query.
+  if (!token || !/^[A-Za-z0-9_-]{43}$/.test(token)) return json({ error: "Sign in required." }, 401);
+
+  let admin: AdminUser | null;
   try {
-    const admin = await getAdminBySession(sha256(token));
-    return admin ?? json({ error: "Your session has expired. Sign in again." }, 401);
+    admin = await getAdminBySession(sha256(token));
   } catch (e) {
     if (e instanceof DataUnavailableError) return json({ error: "No database configured." }, 503);
     throw e;
   }
+  if (!admin) return json({ error: "Your session has expired. Sign in again." }, 401);
+
+  if (write) {
+    const { ok, retryAfter } = await rateLimit(`admin:write:${admin.id}`, WRITE_LIMIT, WRITE_WINDOW_MS);
+    if (!ok) {
+      count("ratelimit.rejected");
+      return NextResponse.json(
+        { error: "Too many changes in a short time. Wait a moment and try again." },
+        { status: 429, headers: { "cache-control": "no-store", "retry-after": String(retryAfter) } }
+      );
+    }
+  }
+  return admin;
 }
 
 export { json as adminJson };
