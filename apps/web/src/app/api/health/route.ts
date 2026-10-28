@@ -22,10 +22,13 @@ export const dynamic = "force-dynamic";
  */
 export async function GET() {
   const database = await checkDatabase();
+  // "unconfigured" is production with no DATABASE_URL: the site is up and
+  // every search fails. That is not healthy, whatever the process thinks.
+  const down = database === "unreachable" || database === "unconfigured";
 
   return NextResponse.json(
     {
-      status: database === "unreachable" ? "degraded" : "ok",
+      status: down ? "degraded" : "ok",
       database,
       score_version: SCORE_VERSION,
       counters: snapshot(),
@@ -33,7 +36,7 @@ export async function GET() {
     {
       // 503 when the database is down, so a load balancer or uptime check reads
       // the status code rather than having to parse the body.
-      status: database === "unreachable" ? 503 : 200,
+      status: down ? 503 : 200,
       headers: { "cache-control": "no-store" },
     }
   );

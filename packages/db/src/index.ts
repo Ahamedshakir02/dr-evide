@@ -1,4 +1,5 @@
-import { Pool } from "pg";
+import type { Pool } from "pg";
+import { DataUnavailableError, dataMode, getPool, sampleDataAllowed } from "./pool";
 import {
   SAMPLE_DOCTORS,
   doctorSchema,
@@ -18,51 +19,15 @@ import {
 
 export type DoctorWithDistance = Doctor & { distance_km: number };
 
-/**
- * The pool hangs off globalThis, not a module-level `let`.
- *
- * Next's dev server re-evaluates modules on every save, so a module-scoped pool
- * is a new pool per edit — ten more connections each time, until Postgres stops
- * accepting them. In production the module is evaluated once and this behaves
- * identically to a plain variable.
- */
-const globalForPg = globalThis as unknown as { __drEvidePool?: Pool };
-
-function getPool(): Pool | null {
-  if (!process.env.DATABASE_URL) return null;
-  if (!globalForPg.__drEvidePool) {
-    globalForPg.__drEvidePool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      // A doctor search is a single indexed lookup; if it has not answered in
-      // five seconds the database is unhealthy and the user is better served by
-      // an error than a spinner.
-      connectionTimeoutMillis: 5_000,
-      statement_timeout: 5_000,
-      max: 10,
-    });
-  }
-  return globalForPg.__drEvidePool;
-}
-
-/**
- * Is the database reachable? For /api/health only.
- *
- * Returns a string rather than throwing, because a health endpoint that throws
- * tells a load balancer less than one that answers.
- */
-export async function checkDatabase(): Promise<"sample" | "ok" | "unreachable"> {
-  const p = getPool();
-  if (!p) return "sample";
-  try {
-    await p.query("SELECT 1");
-    return "ok";
-  } catch {
-    return "unreachable";
-  }
-}
-
-/** True when the app is serving fictional sample records rather than real data. */
-export const isSampleMode = (): boolean => !process.env.DATABASE_URL;
+export {
+  getPool,
+  checkDatabase,
+  dataMode,
+  isSampleMode,
+  sampleDataAllowed,
+  DataUnavailableError,
+  type DataMode,
+} from "./pool";
 
 /**
  * The columns the product is allowed to expose.
@@ -87,7 +52,9 @@ export interface SearchParams {
 
 export async function findDoctors(params: SearchParams): Promise<DoctorWithDistance[]> {
   const p = getPool();
-  return p ? findDoctorsPg(p, params) : findDoctorsSample(params);
+  if (p) return findDoctorsPg(p, params);
+  if (dataMode() === "unconfigured") throw new DataUnavailableError();
+  return findDoctorsSample(params);
 }
 
 export async function getDoctor(id: number): Promise<Doctor | null> {
@@ -95,12 +62,13 @@ export async function getDoctor(id: number): Promise<Doctor | null> {
 
   if (p) {
     const { rows } = await p.query(
-      `SELECT ${PUBLIC_COLUMNS} FROM doctors WHERE id = $1`,
-      [id]
+      `SELECT ${PUBLIC_COLUMNS} FROM doctors WHERE id = $1 AND ${publicFilter(2)}`,
+      [id, sampleDataAllowed()]
     );
     return rows[0] ? doctorSchema.parse(rows[0]) : null;
   }
 
+  if (dataMode() === "unconfigured") throw new DataUnavailableError();
   return SAMPLE_DOCTORS.find((d) => d.id === id) ?? null;
 }
 
@@ -131,7 +99,7 @@ export async function listIndexableDoctors(): Promise<IndexableDoctor[]> {
   try {
     const { rows } = await p.query(
       `SELECT id, created_at FROM doctors
-       WHERE is_sample = false
+       WHERE is_sample = false AND status = 'published'
        ORDER BY id
        LIMIT ${SITEMAP_URL_CAP}`
     );
@@ -160,6 +128,15 @@ export async function listIndexableDoctors(): Promise<IndexableDoctor[]> {
  */
 const SEARCH_CANDIDATE_CAP = 2_000;
 
+/**
+ * What a member of the public may see: published doctors, and sample doctors
+ * only where fictional data is allowed at all. A database seeded with the
+ * sample set and then pointed at production shows nobody invented. The
+ * argument is the position of the sampleDataAllowed() parameter.
+ */
+const publicFilter = (param: number) =>
+  `status = 'published' AND (is_sample = false OR $${param}::boolean)`;
+
 async function findDoctorsPg(
   p: Pool,
   { specialty, lat, lng, radiusKm }: SearchParams
@@ -169,10 +146,11 @@ async function findDoctorsPg(
        ST_Distance(geom, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography) / 1000.0 AS distance_km
      FROM doctors
      WHERE specialty_slug = $3
+       AND ${publicFilter(5)}
        AND ST_DWithin(geom, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography, $4)
      ORDER BY distance_km
      LIMIT ${SEARCH_CANDIDATE_CAP}`,
-    [lng, lat, specialty, radiusKm * 1000]
+    [lng, lat, specialty, radiusKm * 1000, sampleDataAllowed()]
   );
 
   // Parsed, not cast: pg returns numerics as strings and arrays as arrays-or-null
