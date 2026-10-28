@@ -23,6 +23,7 @@ import { CredentialRow } from "@/components/CredentialRow";
 import { SamplePill, VerifiedPill } from "@/components/Badges";
 import { SampleDataBanner } from "@/components/SampleDataBanner";
 import { ExperienceYears, SpecialtyName, Txt } from "@/components/Txt";
+import { ProfileViewBeacon, TrackedLink } from "@/components/ContactBeacon";
 
 /**
  * Doctor profile.
@@ -133,6 +134,9 @@ export default async function DoctorPage(props: Props) {
           }}
         />
       )}
+
+      {/* Counts that this profile was opened, not which one. See ContactBeacon. */}
+      <ProfileViewBeacon />
 
       <a className="link-back" href={`/results?specialty=${backSlug}`}>
         <ChevronLeft size={16} aria-hidden="true" /> <Txt k="backToResults" />
@@ -252,12 +256,17 @@ export default async function DoctorPage(props: Props) {
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {doctor.phone && (
-                <a className="sh-btn sh-btn--primary sh-btn--lg" href={telHref(doctor.phone)}>
+                <TrackedLink
+                  event="call"
+                  className="sh-btn sh-btn--primary sh-btn--lg"
+                  href={telHref(doctor.phone)}
+                >
                   <Phone size={20} aria-hidden="true" />
                   <Txt k="callClinic" />
-                </a>
+                </TrackedLink>
               )}
-              <a
+              <TrackedLink
+                event="directions"
                 className="sh-btn sh-btn--secondary sh-btn--lg"
                 href={directionsUrl(doctor.lat, doctor.lng)}
                 target="_blank"
@@ -265,7 +274,7 @@ export default async function DoctorPage(props: Props) {
               >
                 <Navigation size={20} aria-hidden="true" />
                 <Txt k="getDirections" />
-              </a>
+              </TrackedLink>
             </div>
 
             {doctor.timings && (
