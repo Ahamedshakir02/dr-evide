@@ -59,14 +59,16 @@ npm run dev
 1. A doctor fills in **`/list-your-practice`** (`POST /api/listing-applications`):
    name, qualifications, registration number, clinic, phone, a contact email,
    and an explicit consent tick. Nothing is public yet.
-2. An admin signs in at **`/admin`** and reviews it. Approving it means placing
-   the clinic on the map (lat/lng — typed addresses do not geocode reliably
-   here) and, once the registration has been checked against the public
+2. An admin signs in at **`/admin`** and reviews it in the Review queue tab.
+   Approving it means placing the clinic on the map (paste "lat, lng" or a
+   Google Maps place link; typed addresses do not geocode reliably here) and, once the registration has been checked against the public
    register, attaching that link. The doctor goes live; verification is
    written to `credential_provenance` with the admin's name.
 3. From then on the admin can edit, verify or withdraw verification, hide,
    republish, or permanently delete the doctor (the "remove me" request).
-   Every action lands in `admin_audit_log`.
+   Every action lands in `admin_audit_log`. The Stats tab shows searches,
+   searches that found nobody per department (the recruiting list), profile
+   views, and Call / Directions taps from `GET /api/admin/stats`.
 
 Review scores cannot be typed in by anyone: they are 25% of TrustScore and
 `doctorEditSchema` refuses them. Changing a registration number clears its
