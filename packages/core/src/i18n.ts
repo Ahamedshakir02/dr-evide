@@ -86,14 +86,15 @@ export interface Strings {
   strongestSignal: (label: string, value: number, max: number) => string;
 
   /**
-   * Two facts the app states rather than hides.
+   * A fact the app states rather than hides: it can measure distance from the
+   * town centre when location was refused. Distance drives list order and
+   * part of the score, so "near you" quietly meaning "near the town centre" is
+   * something the reader is owed.
    *
-   * The mobile app can fall back to bundled sample doctors with no network,
-   * and it can measure distance from the town centre when location was
-   * refused. Distance drives list order and part of the score, so "near you"
-   * quietly meaning "near the town centre" is something the reader is owed.
+   * (There used to be a second one, "offline — showing bundled sample
+   * doctors". The app no longer shows fictional doctors when it cannot reach
+   * the server; it shows offlineTitle/offlineBody and a retry.)
    */
-  offlineSampleFallback: string;
   distanceFromTownCentre: string;
 
   // ── Score bands ────────────────────────────────────────────────
@@ -199,7 +200,6 @@ const en: Strings = {
   strongestSignal: (label, value, max) =>
     `Strongest signal: ${label.toLowerCase()} (${value} of ${max})`,
 
-  offlineSampleFallback: "Offline — showing bundled sample doctors",
   distanceFromTownCentre: "Distances measured from Edappal town centre",
 
   bands: {
@@ -297,7 +297,6 @@ const ml: Strings = {
   viewProfile: "വിവരങ്ങൾ കാണുക",
   strongestSignal: (label, value, max) => `ഏറ്റവും ശക്തമായത്: ${label} (${max}-ൽ ${value})`,
 
-  offlineSampleFallback: "ഓഫ്‌ലൈൻ — ആപ്പിലുള്ള സാമ്പിൾ ഡോക്ടർമാരെ കാണിക്കുന്നു",
   distanceFromTownCentre: "ദൂരം എടപ്പാൾ ടൗൺ കേന്ദ്രത്തിൽ നിന്ന് കണക്കാക്കുന്നു",
 
   bands: {

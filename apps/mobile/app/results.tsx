@@ -3,8 +3,8 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import Slider from "@react-native-community/slider";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ChevronLeft, MapPin, WifiOff } from "lucide-react-native";
-import { currentYear, findDoctors } from "../src/lib/api";
+import { ChevronLeft, MapPin, RefreshCw } from "lucide-react-native";
+import { LoadError, currentYear, findDoctors } from "../src/lib/api";
 import { useUserLocation } from "../src/lib/location";
 import {
   MAX_RADIUS_KM,
@@ -16,7 +16,8 @@ import {
 import type { RankedDoctor, SpecialtySlug } from "@dr-evide/core";
 import { DoctorCard } from "../src/components/DoctorCard";
 import { RankedIcon } from "../src/components/SpecialtyIcon";
-import { Pledge } from "../src/components/ui";
+import { Button, Pledge } from "../src/components/ui";
+import { LoadFailure } from "../src/components/LoadFailure";
 import { useLang } from "../src/lib/lang";
 import { color, font, radius, space, text } from "../src/theme";
 
@@ -42,7 +43,8 @@ export default function ResultsScreen() {
 
   const [radiusKm, setRadiusKm] = useState(MOBILE_RADIUS_DEFAULT_KM);
   const [doctors, setDoctors] = useState<RankedDoctor[]>([]);
-  const [offline, setOffline] = useState(false);
+  /** Set when the list could not be loaded. Never papered over with sample doctors. */
+  const [failure, setFailure] = useState<LoadError["kind"] | null>(null);
 
   /**
    * Starts at the Edappal fallback and refines once the fix lands, so the list
@@ -63,6 +65,7 @@ export default function ResultsScreen() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setFailure(null);
     try {
       const res = await findDoctors({
         specialty,
@@ -72,8 +75,10 @@ export default function ResultsScreen() {
         radiusKm,
       });
       setDoctors(res.doctors);
-      setOffline(res.offline);
       setAsOfYear(res.asOfYear);
+    } catch (e) {
+      setDoctors([]);
+      setFailure(e instanceof LoadError ? e.kind : "server");
     } finally {
       setLoading(false);
     }
@@ -121,11 +126,15 @@ export default function ResultsScreen() {
               <Text style={[s.radiusLabel, ml && s.radiusLabelMl]}>{t.within}</Text>
               <Text style={s.radiusValue}>{radiusKm} km</Text>
             </View>
-            <Text style={[s.count, ml && s.countMl]}>
-              <Text style={{ fontFamily: font.monoBold, color: color.text }}>{doctors.length}</Text>
-              {" "}
-              {t.doctorsFound(doctors.length)}
-            </Text>
+            {/* No count when the list failed: "0 doctors found" would claim
+                an answer the server never gave. */}
+            {!failure && (
+              <Text style={[s.count, ml && s.countMl]}>
+                <Text style={{ fontFamily: font.monoBold, color: color.text }}>{doctors.length}</Text>
+                {" "}
+                {t.doctorsFound(doctors.length)}
+              </Text>
+            )}
           </View>
           <Slider
             minimumValue={RADIUS_MIN}
@@ -143,13 +152,6 @@ export default function ResultsScreen() {
           <Pledge icon={<RankedIcon />}>{t.rankedByTrust}</Pledge>
         </View>
 
-        {offline && (
-          <View style={s.offlineRow}>
-            <WifiOff size={13} color={color.warningText} />
-            <Text style={[s.offlineText, ml && s.offlineTextMl]}>{t.offlineSampleFallback}</Text>
-          </View>
-        )}
-
         {/* Say so rather than quietly measuring from the wrong place. Distance
             drives the list order and part of the score, so "near you" being
             "near the town centre" is a fact the person is entitled to. */}
@@ -165,7 +167,17 @@ export default function ResultsScreen() {
       <ScrollView contentContainerStyle={s.list}>
         {loading && <ActivityIndicator style={{ marginTop: space[12] }} color={color.accent} />}
 
-        {!loading && doctors.length === 0 && (
+        {!loading && failure && (
+          <LoadFailure kind={failure}>
+            <Button
+              label={t.tryAgain}
+              onPress={load}
+              icon={<RefreshCw size={18} color={color.accentContrast} />}
+            />
+          </LoadFailure>
+        )}
+
+        {!loading && !failure && doctors.length === 0 && (
           /* The same pair the website shows for this state: what happened,
              then why it is normal here rather than a suggestion to fiddle
              with the slider. The slider is directly above and visible. */
@@ -249,8 +261,6 @@ const s = StyleSheet.create({
   count: { fontFamily: font.body, fontSize: 13, color: color.textMuted, flexShrink: 1 },
   countMl: { fontFamily: font.malayalam, fontSize: 12, lineHeight: 20 },
   offlineRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: space[2] },
-  offlineText: { fontFamily: font.body, fontSize: text.xs, color: color.warningText },
-  offlineTextMl: { fontFamily: font.malayalam, fontSize: 11, lineHeight: 20 },
   approxText: { fontFamily: font.body, fontSize: text.xs, color: color.textFaint },
   approxTextMl: { fontFamily: font.malayalam, fontSize: 11, lineHeight: 20 },
   list: { padding: 22, gap: 14, paddingBottom: space[12] },

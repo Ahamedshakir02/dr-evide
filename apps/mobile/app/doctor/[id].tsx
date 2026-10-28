@@ -10,8 +10,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ChevronLeft, CircleCheck, Navigation, Phone } from "lucide-react-native";
-import { currentYear, getDoctor, haversineKm, scoreOne } from "../../src/lib/api";
+import { ChevronLeft, CircleCheck, Navigation, Phone, RefreshCw } from "lucide-react-native";
+import { LoadError, currentYear, getDoctor, haversineKm, scoreOne } from "../../src/lib/api";
+import { LoadFailure } from "../../src/components/LoadFailure";
 import { useUserLocation } from "../../src/lib/location";
 import {
   MOBILE_RADIUS_DEFAULT_KM,
@@ -62,9 +63,25 @@ export default function DoctorScreen() {
    */
   const coords = useUserLocation();
 
+  const [failure, setFailure] = useState<LoadError["kind"] | null>(null);
+  /** Bumped by "Try again" to re-run the load. */
+  const [attempt, setAttempt] = useState(0);
+
   useEffect(() => {
+    let cancelled = false;
     (async () => {
-      const d = await getDoctor(parseInt(params.id, 10));
+      setLoading(true);
+      setFailure(null);
+      let d: Doctor | null;
+      try {
+        d = await getDoctor(parseInt(params.id, 10));
+      } catch (e) {
+        if (cancelled) return;
+        setFailure(e instanceof LoadError ? e.kind : "server");
+        setLoading(false);
+        return;
+      }
+      if (cancelled) return;
       if (d) {
         // Reproduce the search context the list ranked under, so the ring here
         // shows exactly the number shown on the card that was tapped.
@@ -82,12 +99,36 @@ export default function DoctorScreen() {
       setDoctor(d);
       setLoading(false);
     })();
-  }, [params.id, params.conditions, params.radius, coords.lat, coords.lng]);
+    return () => {
+      cancelled = true;
+    };
+  }, [params.id, params.conditions, params.radius, coords.lat, coords.lng, attempt]);
 
   if (loading) {
     return (
       <SafeAreaView style={s.screen}>
         <ActivityIndicator style={{ marginTop: space[16] }} color={color.accent} />
+      </SafeAreaView>
+    );
+  }
+
+  if (failure) {
+    return (
+      <SafeAreaView style={s.screen}>
+        <View style={{ paddingHorizontal: 22, paddingTop: space[2] }}>
+          <Pressable onPress={() => router.back()} style={s.iconBtn} accessibilityLabel="Back">
+            <ChevronLeft size={20} color={color.text} />
+          </Pressable>
+        </View>
+        <View style={{ paddingHorizontal: 22 }}>
+          <LoadFailure kind={failure}>
+            <Button
+              label={t.tryAgain}
+              onPress={() => setAttempt((n) => n + 1)}
+              icon={<RefreshCw size={18} color={color.accentContrast} />}
+            />
+          </LoadFailure>
+        </View>
       </SafeAreaView>
     );
   }
