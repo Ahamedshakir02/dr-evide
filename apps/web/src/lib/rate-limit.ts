@@ -60,23 +60,57 @@ const globalForRedis = globalThis as unknown as {
   __drEvideRedis?: Promise<RedisClientType | null>;
 };
 
+/**
+ * How long a failed first connection is remembered before trying again. Without
+ * a retry the limiter would stay on memory for the life of the process after
+ * one bad start; without a pause every request would wait on a dead host.
+ */
+const RECONNECT_AFTER_MS = 30_000;
+const CONNECT_TIMEOUT_MS = 1_000;
+/** A rate-limit check is on the path of every search; it gets half a second. */
+const COMMAND_TIMEOUT_MS = 500;
+
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error("timeout")), ms);
+    Promise.resolve(p).then(
+      (v) => (clearTimeout(t), resolve(v)),
+      (e) => (clearTimeout(t), reject(e))
+    );
+  });
+}
+
 function getRedis(): Promise<RedisClientType | null> | null {
   if (!process.env.REDIS_URL) return null;
 
   globalForRedis.__drEvideRedis ??= (async () => {
+    let client: RedisClientType | null = null;
     try {
-      const client: RedisClientType = createClient({
+      client = createClient({
         url: process.env.REDIS_URL,
         // The caller is waiting on this before their symptom is even read.
         // If Redis has not answered in a second, memory is the better answer.
-        socket: { connectTimeout: 1_000, reconnectStrategy: (n) => Math.min(n * 200, 5_000) },
+        socket: {
+          connectTimeout: CONNECT_TIMEOUT_MS,
+          reconnectStrategy: (n) => Math.min(n * 200, 5_000),
+        },
+        // While disconnected, fail commands at once instead of queueing them
+        // until Redis returns. A queued command is a search request hanging.
+        disableOfflineQueue: true,
       });
       // node-redis emits 'error' on the client; with no listener Node treats it
       // as an unhandled error event and takes the process down.
       client.on("error", () => count("ratelimit.degraded"));
-      await client.connect();
+      // connect() keeps retrying under reconnectStrategy and does not reject
+      // while it does, so an unreachable host would leave every caller waiting
+      // on this promise forever. Found by running against a stopped server.
+      await withTimeout(client.connect(), CONNECT_TIMEOUT_MS * 2);
       return client;
     } catch {
+      client?.destroy();
+      setTimeout(() => {
+        globalForRedis.__drEvideRedis = undefined;
+      }, RECONNECT_AFTER_MS).unref?.();
       return null;
     }
   })();
@@ -95,10 +129,13 @@ export async function rateLimit(
     try {
       const client = await pending;
       if (client) {
-        const reply = await client.eval(WINDOW_SCRIPT, {
-          keys: [`rl:${key}`],
-          arguments: [String(windowMs)],
-        });
+        const reply = await withTimeout(
+          client.eval(WINDOW_SCRIPT, {
+            keys: [`rl:${key}`],
+            arguments: [String(windowMs)],
+          }),
+          COMMAND_TIMEOUT_MS
+        );
 
         // Checked, not cast. A reply of the wrong shape destructures into
         // undefined, `undefined > limit` is false, and the endpoint quietly
