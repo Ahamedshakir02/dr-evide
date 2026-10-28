@@ -16,14 +16,14 @@
 // The output goes to stdout so it is never written to disk by accident. It is
 // the only list of contact details this product holds; treat the file you
 // redirect it into accordingly, and delete it when the send is done.
-import pg from "pg";
+import { newClient } from "./client.mjs";
 
 if (!process.env.DATABASE_URL) {
   console.error("DATABASE_URL is not set — there is no list to export.");
   process.exit(1);
 }
 
-const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
+const client = newClient();
 await client.connect();
 
 const { rows } = await client.query(
