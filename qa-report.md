@@ -7,8 +7,8 @@ Stack: Postgres 16 + PostGIS 3.4 (`postgis/postgis:16-3.4`), Redis 7, `next buil
 
 95 integration tests, all against real PostGIS (and real Redis for the limiter). The
 apply → approve → public → edit → verify → hide → delete journey works end to end.
-**5 bugs found**; three are pinned by `it.fails` tests that go red once fixed (then
-drop `.fails`).
+**5 bugs found.** Bugs 1, 2, 3 and 5 (and both minor items) are fixed on the backend
+branch, and their tests now run as ordinary regression tests. Bug 4 is fixed in PR #3.
 
 ## How to run
 
@@ -37,15 +37,15 @@ does not run them at all.
 
 ## Bugs
 
-### 1. Huge ids crash with a 500 (medium)
+### 1. Huge ids crash with a 500 (medium) — fixed
 
 `/api/doctors/99999999999` → **500** (`value "99999999999" is out of range for type
 integer`); `/doctor/99999999999` shows "Something went wrong" instead of a 404. Same
 for every admin `[id]` route. `doctorIdSchema` in `packages/core/src/schemas.ts` is
 `z.coerce.number().int().positive()` with no upper bound.
-Fix: add `.max(2_147_483_647)`. Test: `public-api.int.test.ts` (`it.fails`).
+Fix: add `.max(2_147_483_647)`. Test: `public-api.int.test.ts`.
 
-### 2. Duplicate pending applications (medium)
+### 2. Duplicate pending applications (medium) — fixed
 
 Five simultaneous submissions with one registration number file five pending
 applications (reproduced 30/30 runs). `submitApplication` checks, then inserts, with
@@ -53,18 +53,18 @@ nothing unique behind it. A double-tapped Submit on a slow phone connection does
 The admin then sees duplicates, and approving one makes the others a 409.
 Fix: a partial unique index, `ON listing_applications (nmc_reg_no) WHERE status =
 'pending'`, and map `23505` to `{ status: "duplicate" }`.
-Test: `applications.int.test.ts` (`it.fails`).
+Test: `applications.int.test.ts`.
 
-### 3. Simultaneous edits to one registration number crash (low)
+### 3. Simultaneous edits to one registration number crash (low) — fixed
 
 Two admins giving two doctors the same registration number at the same moment: one
 gets 200, the other an unhandled unique-violation (500) instead of the 409 the console
 shows. `updateDoctor` and `approveApplication` check then write; the index catches it
 but nobody maps the error.
 Fix: catch `23505` on `doctors_nmc_reg_no_idx` in both and return
-`duplicate_registration`. Test: `admin-api.int.test.ts` (`it.fails`).
+`duplicate_registration`. Test: `admin-api.int.test.ts`.
 
-### 4. Sign-out leaves the cookie in the browser in production (low)
+### 4. Sign-out leaves the cookie in the browser in production (low) — fixed in PR #3
 
 In production the cookie is `__Host-dre_admin`. Logout clears it with
 `Set-Cookie: __Host-dre_admin=; Path=/; Max-Age=0` — no `Secure`, which browsers
@@ -74,13 +74,13 @@ the old cookie gets a 401 — not a security hole, but the console will see a "s
 in" cookie that is dead. Fix: pass the same `secure`/`httpOnly`/`sameSite` options when
 clearing (`apps/web/src/lib/admin-auth.ts`, `logout`).
 
-### 5. `admin:create` accepts emails that can never sign in (low)
+### 5. `admin:create` accepts emails that can never sign in (low) — fixed
 
 `npm run admin:create -- --email ops@localhost ...` succeeds, but the login route's
 `emailSchema` requires a dot in the domain, so that admin always gets a 400. Fix:
 validate with the same rule in `packages/db/create-admin.mjs`.
 
-### Minor, not filed
+### Minor (both fixed)
 
 - `GET /api/admin/stats?days=-5` echoes `days: -5` while reading 1 day.
 - Unverifying a doctor who was never verified still writes a "Verification withdrawn" provenance line.

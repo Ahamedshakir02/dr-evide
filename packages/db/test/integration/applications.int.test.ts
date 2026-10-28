@@ -90,13 +90,10 @@ describe.skipIf(!hasDatabase)("listing applications", () => {
     });
 
     /**
-     * BUG (qa-report: "Duplicate pending applications"). The duplicate check and
-     * the insert are two statements with no unique index behind them, so a
-     * double-tapped Submit files the same doctor several times. `it.fails`
-     * keeps the suite green while the bug stands and turns red once it is
-     * fixed — then drop `.fails`.
+     * Regression (qa-report bug 2): a double-tapped Submit used to file the same
+     * doctor several times. listing_applications_pending_reg_idx now stops it.
      */
-    it.fails("files only one application when the same doctor submits several times at once", async () => {
+    it("files only one application when the same doctor submits several times at once", async () => {
       const reg = "TCMC-RACE";
       // Open five connections first, as a busy server would have, so the five
       // submissions really do overlap instead of queueing behind connect().

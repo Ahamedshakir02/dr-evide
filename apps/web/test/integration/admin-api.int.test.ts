@@ -297,13 +297,10 @@ describe.skipIf(!hasDatabase)("admin API", () => {
     });
 
     /**
-     * BUG (qa-report: "Simultaneous edits to one registration number crash").
-     * updateDoctor checks for a duplicate and then writes, so two admins saving
-     * the same number on two doctors at once both pass the check; the unique
-     * index stops the second, but as an unhandled error (a 500) instead of the
-     * 409 the console knows how to show. approveApplication has the same gap.
+     * Regression (qa-report bug 3): two admins saving one number on two doctors
+     * at once used to get a 500 from the unique index instead of a 409.
      */
-    it.fails("answers 409, not a crash, when two doctors are given one number at the same moment", async () => {
+    it("answers 409, not a crash, when two doctors are given one number at the same moment", async () => {
       const a = await insertDoctor();
       const b = await insertDoctor();
       await Promise.all(Array.from({ length: 4 }, () => q("SELECT pg_sleep(0.05)")));

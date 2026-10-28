@@ -109,11 +109,10 @@ describe.skipIf(!hasDatabase)("public API", () => {
     });
 
     /**
-     * BUG (qa-report: "Huge ids crash with a 500"). doctorIdSchema has no upper
-     * bound, so /doctor/9999999999 reaches Postgres, overflows the int column
-     * and the handler throws. Should be a 400 or 404.
+     * Regression (qa-report bug 1): an id past the int range used to reach
+     * Postgres, overflow the column and crash the handler.
      */
-    it.fails("is a 400 or 404, not a crash, for an id past the int range", async () => {
+    it("is a 400 or 404, not a crash, for an id past the int range", async () => {
       const res = await getDoctorRoute(request("GET", "/"), ctx("99999999999"));
       expect([400, 404]).toContain(res.status);
     });
