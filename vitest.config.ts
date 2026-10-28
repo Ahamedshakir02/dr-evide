@@ -12,6 +12,8 @@ export default defineConfig({
      * that parses untrusted model output as the only untested risk in the repo.
      */
     include: ["packages/*/test/**/*.test.ts", "apps/web/test/**/*.test.ts"],
+    // Need a real database; run with `npm run test:integration`.
+    exclude: ["**/node_modules/**", "**/test/integration/**"],
     environment: "node",
   },
   resolve: {

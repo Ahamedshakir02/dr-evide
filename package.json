@@ -14,6 +14,7 @@
     "mobile": "npm run start --workspace @dr-evide/mobile",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "eslint .",
     "check:integrity": "node scripts/check-no-paid-ranking.mjs",
