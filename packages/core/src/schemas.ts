@@ -65,7 +65,12 @@ export const routeSymptomSchema = z.object({
   text: z.string().trim().min(3, "Please describe your problem in a few words.").max(500),
 });
 
-export const doctorIdSchema = z.coerce.number().int().positive();
+/**
+ * Capped at Postgres's int range: `doctors.id` is a serial, and an id past it
+ * made Postgres throw "out of range for type integer" — a 500 where a 404 or
+ * 400 belongs.
+ */
+export const doctorIdSchema = z.coerce.number().int().positive().max(2_147_483_647);
 
 /**
  * A doctor row, as it must look before it is scored or serialised.

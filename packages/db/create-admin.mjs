@@ -22,6 +22,14 @@ const email = arg("email").toLowerCase();
 const name = arg("name");
 const disable = args.includes("--disable");
 
+// The same rule as emailSchema in src/validation.ts, which the login form
+// uses: an address it would reject (ops@localhost) could never sign in.
+const EMAIL = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/;
+if (email && !EMAIL.test(email)) {
+  console.error(`'${email}' is not an address the sign-in form accepts (it needs a dot in the domain).`);
+  process.exit(2);
+}
+
 if (!email || (!name && !disable)) {
   console.error('Usage: npm run admin:create -- --email you@example.com --name "Your Name"');
   console.error("       npm run admin:create -- --email you@example.com --disable");

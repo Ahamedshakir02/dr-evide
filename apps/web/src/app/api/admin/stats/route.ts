@@ -13,7 +13,9 @@ export async function GET(req: NextRequest) {
   const admin = await requireAdmin(req);
   if (admin instanceof NextResponse) return admin;
 
-  const days = Number(req.nextUrl.searchParams.get("days")) || 30;
+  // Clamped here, not only in readCounters, so the response says which window it read.
+  const asked = Math.trunc(Number(req.nextUrl.searchParams.get("days")) || 30);
+  const days = Math.min(Math.max(asked, 1), 366);
   const [counters, summary] = await Promise.all([readCounters(days), readDataSummary()]);
   return adminJson({ days, counters, summary }, 200);
 }

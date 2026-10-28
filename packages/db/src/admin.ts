@@ -1,7 +1,13 @@
 import { doctorSchema, type CredentialProvenance, type Doctor } from "@dr-evide/core";
 import { requirePool } from "./pool";
 import { audit } from "./audit";
-import { withTransaction, writeProvenance, reviewerLabel, type Reviewer } from "./applications";
+import {
+  onDuplicateRegistration,
+  withTransaction,
+  writeProvenance,
+  reviewerLabel,
+  type Reviewer,
+} from "./applications";
 import type { DoctorEditInput, VerificationInput } from "./validation";
 
 // ── Admin users and sessions ────────────────────────────────────────────────
@@ -178,7 +184,7 @@ export async function updateDoctor(
   edits: DoctorEditInput,
   admin: Reviewer
 ): Promise<DoctorWriteResult> {
-  return withTransaction(async (c) => {
+  return onDuplicateRegistration(() => withTransaction(async (c) => {
     const cur = await c.query(`SELECT nmc_reg_no, is_sample FROM doctors WHERE id = $1 FOR UPDATE`, [id]);
     if (!cur.rows[0]) return { status: "not_found" };
     if (cur.rows[0].is_sample) return { status: "sample" };
@@ -214,8 +220,8 @@ export async function updateDoctor(
       fields: fields.join(","),
       verification_cleared: regChanged,
     });
-    return { status: "ok" };
-  });
+    return { status: "ok" as const };
+  }));
 }
 
 export async function verifyDoctor(
@@ -240,9 +246,15 @@ export async function unverifyDoctor(
   admin: Reviewer
 ): Promise<DoctorWriteResult> {
   return withTransaction(async (c) => {
-    const { rows } = await c.query(`SELECT is_sample FROM doctors WHERE id = $1 FOR UPDATE`, [id]);
+    const { rows } = await c.query(
+      `SELECT is_sample, nmc_verified FROM doctors WHERE id = $1 FOR UPDATE`,
+      [id]
+    );
     if (!rows[0]) return { status: "not_found" };
     if (rows[0].is_sample) return { status: "sample" };
+    // Nothing to withdraw: a "verification withdrawn" line for a doctor who
+    // was never verified would make the provenance history say something false.
+    if (!rows[0].nmc_verified) return { status: "ok" };
     await c.query(`UPDATE doctors SET nmc_verified = false, updated_at = now() WHERE id = $1`, [id]);
     // Append-only: the earlier "verified" row stays, and this one says it no longer holds.
     await c.query(

@@ -198,6 +198,21 @@ CREATE TABLE IF NOT EXISTS listing_applications (
 CREATE INDEX IF NOT EXISTS listing_applications_status_idx
   ON listing_applications (status, created_at);
 
+-- One pending application per registration number. Without it, a double-tapped
+-- Submit on a slow connection filed the same doctor several times: the check
+-- in submitApplication and the insert are two statements. Older duplicates (if
+-- any were filed before this index) are closed first so the index can build.
+UPDATE listing_applications a
+SET status = 'rejected', reviewed_at = now(),
+    review_note = 'Closed automatically: duplicate of an earlier pending application.'
+WHERE a.status = 'pending'
+  AND EXISTS (
+    SELECT 1 FROM listing_applications b
+    WHERE b.status = 'pending' AND b.nmc_reg_no = a.nmc_reg_no AND b.id < a.id
+  );
+CREATE UNIQUE INDEX IF NOT EXISTS listing_applications_pending_reg_idx
+  ON listing_applications (nmc_reg_no) WHERE status = 'pending';
+
 -- The telemetry counters, kept. In-process counters reset on every deploy,
 -- which made them useless for the numbers the product is steered by: searches
 -- per week, and which departments come back empty. Names and integers per day,
