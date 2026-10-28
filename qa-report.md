@@ -87,6 +87,40 @@ validate with the same rule in `packages/db/create-admin.mjs`.
 
 ---
 
+## Browser click-through — frontend PR #5
+
+Run on PR #5 merged with the fixed backend (#1) and security (#3), `next build && next start`
+in production mode, Chromium at 1280px and Pixel 5 (393px).
+
+Works: list-your-practice (field errors, focus on first error, success, duplicate notice,
+honeypot hidden, no overflow at 393px); admin sign-in (wrong password message), review
+queue, approve with map pin + verification evidence → doctor appears verified in public
+search; edit (fee saved, history line), hide → gone from search → publish; profile page
+sends `profile_view` and `call` beacons; stats tab counts searches, empty searches,
+views and calls; delete asks for the name typed back and removes the doctor; sign out
+clears the cookie (PR #3) and returns to the login screen. `/admin` is `noindex`. No
+console errors apart from blocked web fonts in this sandbox.
+
+Not covered: the mobile app's offline state (Expo; no device in this sandbox).
+
+### Frontend bugs
+
+- **F1 (medium) — raw validation text shown to doctors.** Submitting the sign-up form
+  without a department shows `Invalid enum value. Expected 'dermatology' | 'cardiology' |
+  … received ''` under Department. Needs a plain message ("Choose your department"),
+  ideally via an errorMap on `specialtySlugSchema` in `listingApplicationSchema`.
+- **F2 (low) — wrong message for an empty phone.** An empty "Clinic phone" says "Enter a
+  phone number with digits only." It should say the phone is required.
+- **F3 (low) — approval missing from a doctor's history.** Right after approving, the
+  doctor's History says "No admin changes yet": `application.approve` is logged against
+  the application, and the doctor page only reads doctor rows. Show it, or log a
+  `doctor.create` line too.
+- **F4 (low, UX) — "Checked against" defaults to NMC registry** in the approve form even
+  when the doctor named a state council (TCMC). Easy to file the wrong source; default to
+  "state council" when `registration_council` is set, or require a choice.
+
+---
+
 # Earlier pass — Dr Evide sample-data web demo
 
 URL: `http://localhost:3000` · Date: 2026-09-11 · Viewports: 1265px desktop and 375px mobile
