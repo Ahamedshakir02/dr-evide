@@ -70,6 +70,16 @@ export function ListingForm() {
       website: str(fd, "website"),
     };
 
+    // The obvious gaps are caught here, with plain wording, before a request
+    // is spent: the endpoint allows five submissions an hour, and its own
+    // messages for an empty select or phone read as validator output.
+    const missing = missingFields(body);
+    if (Object.keys(missing).length > 0) {
+      setState({ kind: "error", message: "Some fields need attention.", fields: missing });
+      focusFirst(missing);
+      return;
+    }
+
     let res: Response;
     try {
       res = await fetch("/api/listing-applications", {
@@ -109,14 +119,16 @@ export function ListingForm() {
     }
     setState({ kind: "error", message, fields });
 
-    // Put the reader on the first thing to fix rather than at the bottom of a long form.
-    const first = Object.keys(fields)[0];
-    if (first) {
-      requestAnimationFrame(() => {
-        const el = formRef.current?.querySelector<HTMLElement>(`[name="${first}"]`);
-        el?.focus();
-      });
-    }
+    focusFirst(fields);
+  }
+
+  /** Put the reader on the first thing to fix rather than at the bottom of a long form. */
+  function focusFirst(fields: Record<string, string>) {
+    const first = FIELD_ORDER.find((k) => fields[k]) ?? Object.keys(fields)[0];
+    if (!first) return;
+    requestAnimationFrame(() => {
+      formRef.current?.querySelector<HTMLElement>(`[name="${first}"]`)?.focus();
+    });
   }
 
   if (state.kind === "saved") {
@@ -356,12 +368,48 @@ export function ListingForm() {
   );
 }
 
-/** "qualifications.0" → "qualifications": one message per input, the first one wins. */
+/** Form order, so focus lands on the first problem a reader would meet. */
+const FIELD_ORDER = [
+  "full_name", "specialty_slug", "qualifications", "qualification_level", "nmc_reg_no",
+  "reg_year", "registration_council", "clinic_name", "address", "town", "phone",
+  "map_link", "fee_inr", "timings", "conditions", "contact_email", "consent",
+];
+
+/** Required fields left empty, each with the message a person would write. */
+function missingFields(b: {
+  full_name: string;
+  specialty_slug: string;
+  qualifications: string[];
+  nmc_reg_no: string;
+  address: string;
+  town: string;
+  phone: string;
+  contact_email: string;
+  consent: boolean;
+}): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!b.full_name) out.full_name = "Enter your full name as registered.";
+  if (!b.specialty_slug) out.specialty_slug = "Choose your department.";
+  if (b.qualifications.length === 0) out.qualifications = "List at least one qualification, e.g. MBBS.";
+  if (!b.nmc_reg_no) out.nmc_reg_no = "Enter your registration number.";
+  if (!b.address) out.address = "Enter the clinic address.";
+  if (!b.town) out.town = "Enter the town.";
+  if (!b.phone) out.phone = "Enter the clinic phone number.";
+  if (!b.contact_email) out.contact_email = "Enter your email address.";
+  if (!b.consent) out.consent = "We can only list you with your consent.";
+  return out;
+}
+
+/**
+ * Server field messages, keyed by input. "qualifications.0" → "qualifications",
+ * first message wins. A department zod rejects as an enum gets the same
+ * wording as the local check, not "Invalid enum value. Expected …".
+ */
 function normaliseFields(fields: Record<string, string>): Record<string, string> {
   const out: Record<string, string> = {};
   for (const [k, v] of Object.entries(fields)) {
     const key = k.split(".")[0] ?? k;
-    out[key] ??= v;
+    out[key] ??= key === "specialty_slug" ? "Choose your department." : v;
   }
   return out;
 }
