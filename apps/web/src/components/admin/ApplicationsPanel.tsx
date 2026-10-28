@@ -194,7 +194,7 @@ function ApproveForm({
     return c ? `${c.lat}, ${c.lng}` : "";
   });
   const [verify, setVerify] = useState(false);
-  const [v, setV] = useState<VerificationDraft>(emptyVerification);
+  const [v, setV] = useState<VerificationDraft>(() => emptyVerification(app.registration_council));
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);

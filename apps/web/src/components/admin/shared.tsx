@@ -84,8 +84,13 @@ export interface VerificationDraft {
   note: string;
 }
 
-export const emptyVerification = (): VerificationDraft => ({
-  source: "nmc-registry",
+/**
+ * A blank verification, checked against the register the doctor named. A
+ * state council registration (TCMC, KMC, a dental council) is not on the NMC
+ * register, so defaulting to "NMC registry" for it pre-fills the wrong answer.
+ */
+export const emptyVerification = (council?: string | null): VerificationDraft => ({
+  source: council && !/\b(nmc|national medical commission|mci)\b/i.test(council) ? "state-council" : "nmc-registry",
   evidence_url: "",
   note: "",
 });

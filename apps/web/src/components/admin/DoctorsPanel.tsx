@@ -25,6 +25,16 @@ import { splitList } from "../listing/fields";
  * TrustScore, and the API refuses them for that reason.
  */
 
+/** Audit actions as a reviewer would say them. Unknown ones show as stored. */
+const ACTION_LABELS: Record<string, string> = {
+  "application.approve": "Approved from listing application",
+  "doctor.update": "Edited",
+  "doctor.verify": "Verified",
+  "doctor.unverify": "Verification withdrawn",
+  "doctor.hide": "Hidden",
+  "doctor.publish": "Published",
+};
+
 const specialtyName = (s: string) => (isSpecialtySlug(s) ? SPECIALTIES[s].name : s);
 
 export function DoctorsPanel({
@@ -326,7 +336,7 @@ function DoctorDetail({ id, onClose }: { id: number; onClose: () => void }) {
             <ol className="adm-timeline">
               {d.history.map((h, i) => (
                 <li key={i}>
-                  <strong>{h.action.replace(/^doctor\./, "")}</strong> · {formatWhen(h.created_at)} ·{" "}
+                  <strong>{ACTION_LABELS[h.action] ?? h.action}</strong> · {formatWhen(h.created_at)} ·{" "}
                   {h.admin_name ?? "an admin"}
                   {typeof h.detail?.fields === "string" && <div className="sh-hint">fields: {h.detail.fields}</div>}
                 </li>
