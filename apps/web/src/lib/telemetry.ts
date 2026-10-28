@@ -1,5 +1,6 @@
 import "server-only";
 import type { SpecialtySlug } from "@dr-evide/core";
+import { incrementCounter } from "@dr-evide/db";
 
 /**
  * Counters, and nothing else.
@@ -56,6 +57,22 @@ export type Counter =
    * next recruiting target, and nothing about who asked.
    */
   | `search.empty.${SpecialtySlug}`
+  /** A search ran, per department. The denominator for every other search number. */
+  | `search.performed.${SpecialtySlug}`
+  /**
+   * A reader opened a doctor's profile, tapped Call, or tapped Directions.
+   * Call and Directions are the north-star metric — a search that ended in a
+   * contact. Which doctor is deliberately not recorded: a per-doctor count of
+   * "people who looked for a dermatologist and rang this one" is a health
+   * signal about that doctor's patients.
+   */
+  | "contact.profile_view"
+  | "contact.call"
+  | "contact.directions"
+  /** A doctor submitted a listing application. */
+  | "listing.submitted"
+  /** An admin sign-in failed (wrong password, unknown email, disabled account). */
+  | "admin.login_failed"
   /** A launch-notification address was written (or was already there). */
   | "notify.stored"
   /** Someone asked to be notified on a deployment with no database to hold it. */
@@ -63,10 +80,25 @@ export type Counter =
   /** The insert threw. Worth an alert: the form is promising an email nobody will send. */
   | "notify.failed";
 
-const counters = new Map<Counter, number>();
+const counters = new Map<Counter | "telemetry.persist_failed", number>();
+
+/**
+ * Counters that are kept in the database as well as in memory. The operational
+ * ones (rate limiting, the LLM fallback) stay in-process only: they answer
+ * "is something broken right now" on /api/health, and writing a row per
+ * rate-limit rejection would let a flood of requests turn into a flood of
+ * writes.
+ */
+const PERSISTED = /^(search\.|contact\.|listing\.|notify\.stored$)/;
 
 export function count(name: Counter, by = 1): void {
   counters.set(name, (counters.get(name) ?? 0) + by);
+  if (PERSISTED.test(name)) {
+    // Fire and forget: a search must never wait on, or fail because of, a stat.
+    incrementCounter(name, by).catch(() => {
+      counters.set("telemetry.persist_failed", (counters.get("telemetry.persist_failed") ?? 0) + 1);
+    });
+  }
 }
 
 /** A snapshot, for /api/health. */
