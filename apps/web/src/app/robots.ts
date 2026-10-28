@@ -7,6 +7,8 @@ import { SITE_URL } from "@/lib/site-url";
  * without this a crawler is free to spend its budget on API routes and search
  * result pages instead.
  *
+ * /admin is the review console and has nothing for a search engine.
+ *
  * /api/* and /results are disallowed for different reasons. The API returns
  * JSON that means nothing in a search result. /results and /doctor/[id] are
  * reached from a symptom search whose context lives in sessionStorage — crawled
@@ -18,7 +20,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/api/", "/results"],
+      disallow: ["/api/", "/results", "/admin"],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
   };

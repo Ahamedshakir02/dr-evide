@@ -42,6 +42,16 @@ export function AppChrome({
   const pathname = usePathname();
   const onLanding = pathname === "/";
 
+  // The admin console is a tool, not a page of the public site: no section
+  // links, no "find a doctor", no footer pledge competing with its toolbar.
+  if (pathname?.startsWith("/admin")) {
+    return (
+      <main className="shell" id="main" tabIndex={-1}>
+        {children}
+      </main>
+    );
+  }
+
   return (
     <>
       {/* First focusable element on every page. A keyboard or switch user
@@ -120,7 +130,7 @@ export function AppChrome({
             <a href="/#faq">{c.faq.eyebrow}</a>
             <a href="/api/health">{c.footer.statusLink}</a>
             <a href="/privacy">Privacy</a>
-            <a href="/privacy#doctors">Are you a doctor?</a>
+            <a href="/list-your-practice">Are you a doctor?</a>
           </nav>
         </div>
 
