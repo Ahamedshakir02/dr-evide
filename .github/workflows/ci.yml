@@ -120,6 +120,20 @@ jobs:
           echo "$keys"
           test -n "$keys"
 
+      # The integration suite truncates tables before every test, so it gets its
+      # own database (its harness refuses a name without "test") and its own
+      # Redis db, leaving the server above untouched.
+      - name: Create test database
+        run: docker exec "${{ job.services.postgres.id }}" createdb -U drevide drevide_test
+
+      # --if-present: the suite and its script arrive with the QA work; until
+      # then this step is a no-op rather than a failure.
+      - name: Integration tests
+        run: npm run test:integration --if-present
+        env:
+          TEST_DATABASE_URL: postgres://drevide:drevide@localhost:5432/drevide_test
+          TEST_REDIS_URL: redis://localhost:6379/15
+
       - name: Server log
         if: failure()
         run: cat web.log
