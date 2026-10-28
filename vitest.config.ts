@@ -12,8 +12,13 @@ export default defineConfig({
      * that parses untrusted model output as the only untested risk in the repo.
      */
     include: ["packages/*/test/**/*.test.ts", "apps/web/test/**/*.test.ts"],
-    // Need a real database; run with `npm run test:integration`.
-    exclude: ["**/node_modules/**", "**/test/integration/**"],
+    // Need a real database; run with `npm run test:integration`, one file at a
+    // time, so a test that truncates tables never overlaps one that reads them.
+    exclude: [
+      "**/node_modules/**",
+      "**/test/integration/**",
+      "packages/db/test/admin-history.test.ts",
+    ],
     environment: "node",
   },
   resolve: {

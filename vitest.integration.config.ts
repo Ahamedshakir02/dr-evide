@@ -18,6 +18,8 @@ export default defineConfig({
     include: [
       "packages/*/test/integration/**/*.int.test.ts",
       "apps/web/test/integration/**/*.int.test.ts",
+      // Database-backed tests that live beside the unit tests.
+      "packages/db/test/admin-history.test.ts",
     ],
     environment: "node",
     fileParallelism: false,
