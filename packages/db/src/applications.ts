@@ -49,7 +49,9 @@ export async function submitApplication(input: ListingApplicationInput): Promise
   );
   if (dup.rowCount) return { status: "duplicate" };
 
-  const { rows } = await p.query(
+  let rows;
+  try {
+    ({ rows } = await p.query(
     `INSERT INTO listing_applications (
        full_name, specialty_slug, qualifications, qualification_level, nmc_reg_no,
        registration_council, reg_year, clinic_name, address, town, phone, fee_inr,
@@ -62,7 +64,13 @@ export async function submitApplication(input: ListingApplicationInput): Promise
       input.address, input.town, input.phone, input.fee_inr, input.timings, input.conditions,
       input.map_link, input.contact_email, CONSENT_VERSION,
     ]
-  );
+    ));
+  } catch (e) {
+    // Two submissions racing past the check above; the partial unique index
+    // lets exactly one in.
+    if (isUniqueViolation(e, "listing_applications_pending_reg_idx")) return { status: "duplicate" };
+    throw e;
+  }
   return { status: "saved", id: Number(rows[0].id) };
 }
 
@@ -128,7 +136,7 @@ export async function approveApplication(
   input: ApprovalInput,
   reviewer: Reviewer
 ): Promise<ReviewResult> {
-  return withTransaction(async (c) => {
+  return onDuplicateRegistration(() => withTransaction(async (c) => {
     const { rows } = await c.query(
       `SELECT * FROM listing_applications WHERE id = $1 FOR UPDATE`,
       [id]
@@ -190,7 +198,7 @@ export async function approveApplication(
       verified,
     });
     return { status: "ok", doctor_id: doctorId };
-  });
+  }));
 }
 
 export async function rejectApplication(
@@ -225,6 +233,29 @@ export async function writeProvenance(
      VALUES ($1,$2,$3,$4,$5)`,
     [doctorId, v.source, v.evidence_url, reviewerLabel(reviewer), v.note]
   );
+}
+
+/** A Postgres unique violation (23505), optionally on one named index. */
+export function isUniqueViolation(e: unknown, constraint?: string): boolean {
+  const err = e as { code?: string; constraint?: string } | null;
+  return err?.code === "23505" && (!constraint || err.constraint === constraint);
+}
+
+/**
+ * The duplicate-registration checks are read-then-write, so two admins saving
+ * the same number at the same moment both pass them. The unique index stops
+ * the second; this turns that into the answer the console already shows,
+ * instead of a 500. The transaction has rolled back by the time it is caught.
+ */
+export async function onDuplicateRegistration<T>(
+  fn: () => Promise<T>
+): Promise<T | { status: "duplicate_registration" }> {
+  try {
+    return await fn();
+  } catch (e) {
+    if (isUniqueViolation(e, "doctors_nmc_reg_no_idx")) return { status: "duplicate_registration" };
+    throw e;
+  }
 }
 
 export async function withTransaction<T>(fn: (c: PoolClient) => Promise<T>): Promise<T> {

@@ -1,7 +1,13 @@
 import { doctorSchema, type CredentialProvenance, type Doctor } from "@dr-evide/core";
 import { requirePool } from "./pool";
 import { audit } from "./audit";
-import { withTransaction, writeProvenance, reviewerLabel, type Reviewer } from "./applications";
+import {
+  onDuplicateRegistration,
+  withTransaction,
+  writeProvenance,
+  reviewerLabel,
+  type Reviewer,
+} from "./applications";
 import type { DoctorEditInput, VerificationInput } from "./validation";
 
 // ── Admin users and sessions ────────────────────────────────────────────────
@@ -178,7 +184,7 @@ export async function updateDoctor(
   edits: DoctorEditInput,
   admin: Reviewer
 ): Promise<DoctorWriteResult> {
-  return withTransaction(async (c) => {
+  return onDuplicateRegistration(() => withTransaction(async (c) => {
     const cur = await c.query(`SELECT nmc_reg_no, is_sample FROM doctors WHERE id = $1 FOR UPDATE`, [id]);
     if (!cur.rows[0]) return { status: "not_found" };
     if (cur.rows[0].is_sample) return { status: "sample" };
@@ -214,8 +220,8 @@ export async function updateDoctor(
       fields: fields.join(","),
       verification_cleared: regChanged,
     });
-    return { status: "ok" };
-  });
+    return { status: "ok" as const };
+  }));
 }
 
 export async function verifyDoctor(
