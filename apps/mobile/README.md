@@ -70,9 +70,18 @@ config plugin and regenerate:
 npm run prebuild --workspace @dr-evide/mobile     # --clean
 ```
 
-With no `EXPO_PUBLIC_API_URL` set the app runs entirely on **bundled sample
-doctors** — fictional, marked "Sample data" in the UI — so it works on a phone
-with no server at all.
+The app needs the API for doctors. It does **not** fall back to the bundled
+sample doctors: someone with no signal used to be shown fictional doctors with
+real-looking phone numbers, which is the worst moment to do that. With no
+server, no `EXPO_PUBLIC_API_URL`, or a server error, the Results and profile
+screens say "we couldn't reach the service" (or "something went wrong our
+end"), offer Try again, and keep the 108 line tappable.
+
+Symptom routing and the emergency check still run on the phone with no
+network, because those are code in `@dr-evide/core`, not data.
+
+For fictional doctors in development, point the app at a web server that has
+them (`npm run db:seed:sample`, or no `DATABASE_URL` in development).
 
 ## Pointing it at the API
 
@@ -85,9 +94,9 @@ EXPO_PUBLIC_API_URL=http://192.168.1.5:3000
 ```
 
 Then run the web app (`npm run dev` in the repo root) on the same network. The
-app calls `/api/route-symptom` and `/api/doctors`, and silently falls back to
-the bundled data if the server can't be reached within 6 seconds — the Results
-screen says so when that happens.
+app calls `/api/route-symptom` and `/api/doctors`. If the server can't be
+reached within 6 seconds the screen shows the offline state with a retry, and
+routing falls back to the on-device keyword matcher.
 
 ## What is shared with the website, and what isn't
 

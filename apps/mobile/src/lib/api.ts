@@ -1,10 +1,7 @@
 import {
   DEFAULT_LOCATION,
   MOBILE_RADIUS_DEFAULT_KM,
-  SAMPLE_DOCTORS,
-  SPECIALTIES,
   haversineKm,
-  rankDoctors,
   routeByKeywords,
   scoreOne,
   type Doctor,
@@ -16,15 +13,15 @@ import {
 /**
  * Data access for the app.
  *
- * Talks to the Next.js API when it can reach it and falls back to the bundled
- * sample doctors when it can't, mirroring how the web app degrades with no
- * DATABASE_URL — so the app still works on a phone with no signal, which in the
- * launch area is a normal Tuesday rather than an edge case.
+ * Doctors come from the Next.js API and nowhere else. The app used to fall
+ * back to the bundled sample doctors when the server was unreachable, which
+ * meant a person with no signal was shown fictional doctors with real-looking
+ * phone numbers at the moment they most needed a real one. Now an unreachable
+ * server is a LoadError, and the screen says "we couldn't check" with a retry,
+ * which is the truth.
  *
- * Both paths run the identical filter → rank pipeline from @dr-evide/core, so a
- * doctor scores the same offline as online. That used to be a promise kept by
- * copy-pasting ranking.ts between two directories; now it is kept by there
- * being one file.
+ * Routing a symptom is different: the keyword router and the emergency check
+ * are code, not data, so they still run on the phone with no network.
  *
  * Point EXPO_PUBLIC_API_URL at your dev machine's LAN address (not localhost —
  * that resolves to the phone itself), e.g. EXPO_PUBLIC_API_URL=http://192.168.1.5:3000
@@ -56,13 +53,27 @@ async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
   }
 }
 
+/**
+ * Why doctors could not be loaded.
+ *
+ *   offline — the request never got an answer (no signal, timeout, DNS).
+ *   server  — the server answered with an error, or no API is configured.
+ *
+ * The two get different copy because they ask different things of the reader:
+ * one is "check your connection", the other is "it is not you".
+ */
+export class LoadError extends Error {
+  constructor(public readonly kind: "offline" | "server") {
+    super(kind === "offline" ? "Could not reach the server" : "The server returned an error");
+    this.name = "LoadError";
+  }
+}
+
 export interface SearchResult {
   specialty: { slug: SpecialtySlug; name: string; description: string };
   doctors: RankedDoctor[];
   /** The year the scores were computed against, for the "N yrs" line on cards. */
   asOfYear: number;
-  /** True when this came from bundled data rather than the server. */
-  offline: boolean;
 }
 
 /**
@@ -86,6 +97,19 @@ export async function routeSymptom(text: string): Promise<RoutingResult> {
   return routeByKeywords(text);
 }
 
+/** apiFetch, with "no answer" and "an error answer" told apart. */
+async function request(path: string): Promise<Response> {
+  if (!API_URL) throw new LoadError("server");
+  let res: Response;
+  try {
+    res = await apiFetch(path);
+  } catch {
+    throw new LoadError("offline");
+  }
+  return res;
+}
+
+/** Throws LoadError. An empty list is a real answer, not an error. */
 export async function findDoctors(params: {
   specialty: SpecialtySlug;
   conditions: string[];
@@ -103,52 +127,31 @@ export async function findDoctors(params: {
   });
   if (conditions.length) qs.set("conditions", conditions.join(","));
 
+  const res = await request(`/api/doctors?${qs.toString()}`);
+  if (!res.ok) throw new LoadError("server");
   try {
-    const res = await apiFetch(`/api/doctors?${qs.toString()}`);
-    if (res.ok) {
-      const json = await res.json();
-      return {
-        specialty: json.specialty,
-        doctors: json.doctors,
-        asOfYear: json.as_of_year ?? currentYear(),
-        offline: false,
-      };
-    }
+    const json = await res.json();
+    return {
+      specialty: json.specialty,
+      doctors: json.doctors,
+      asOfYear: json.as_of_year ?? currentYear(),
+    };
   } catch {
-    // fall through to bundled data
+    throw new LoadError("server");
   }
-
-  return { ...searchSample(specialty, conditions, lat, lng, radiusKm), offline: true };
 }
 
+/** The doctor, null when the server says there is no such doctor, or throws LoadError. */
 export async function getDoctor(id: number): Promise<Doctor | null> {
+  if (!Number.isFinite(id)) return null;
+  const res = await request(`/api/doctors/${id}`);
+  if (res.status === 404 || res.status === 400) return null;
+  if (!res.ok) throw new LoadError("server");
   try {
-    const res = await apiFetch(`/api/doctors/${id}`);
-    if (res.ok) return (await res.json()).doctor as Doctor;
+    return (await res.json()).doctor as Doctor;
   } catch {
-    // fall through to bundled data
+    throw new LoadError("server");
   }
-  return SAMPLE_DOCTORS.find((d) => d.id === id) ?? null;
-}
-
-/** Same filter → rank pipeline the server runs, against the bundled data. */
-function searchSample(
-  specialty: SpecialtySlug,
-  conditions: string[],
-  lat: number,
-  lng: number,
-  radiusKm: number
-): Omit<SearchResult, "offline"> {
-  const asOfYear = currentYear();
-  const withDistance = SAMPLE_DOCTORS.filter((d) => d.specialty_slug === specialty)
-    .map((d) => ({ ...d, distance_km: haversineKm(lat, lng, d.lat, d.lng) }))
-    .filter((d) => d.distance_km <= radiusKm);
-
-  return {
-    specialty: { slug: specialty, ...SPECIALTIES[specialty] },
-    doctors: rankDoctors(withDistance, { matchedConditions: conditions, radiusKm, asOfYear }),
-    asOfYear,
-  };
 }
 
 export const currentYear = (): number => new Date().getFullYear();

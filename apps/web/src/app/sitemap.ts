@@ -35,6 +35,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly",
       priority: 0.8,
     },
+    {
+      url: `${SITE_URL}/list-your-practice`,
+      changeFrequency: "monthly",
+      priority: 0.5,
+    },
     ...doctors.map((d) => ({
       url: `${SITE_URL}/doctor/${d.id}`,
       // A profile changes when the credentials behind it are re-checked, which

@@ -19,6 +19,9 @@
    .phone, .mock-*, .store-badge*, .notify*) and none of them appears
    below, so the two files never touch the same element. */
 @import url("../styles/landing.css");
+/* The listing form and admin console. Namespaced (.lyp-*, .adm-*) for the
+   same reason as landing.css. */
+@import url("../styles/admin.css");
 
 *, *::before, *::after { box-sizing: border-box; }
 

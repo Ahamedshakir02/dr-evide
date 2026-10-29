@@ -50,6 +50,11 @@ export default function Privacy() {
         launches. We use it for that one message. Ask us and we delete it.
       </p>
       <p>
+        We also count, per day, how often a doctor&apos;s profile is opened and
+        how often Call or Directions is tapped. The count says only that it
+        happened: not which doctor, not who, and not from where.
+      </p>
+      <p>
         We keep simple counts, such as how many searches found no doctor in a
         department. They hold no text, no location and no identity.
       </p>
@@ -71,8 +76,12 @@ export default function Privacy() {
         change a position.
       </p>
       <p>
-        To be listed, to correct anything, or to be removed, email us and we will
-        act on it.{" "}
+        To be listed, <a href="/list-your-practice">apply here</a>. A person reviews
+        every application, and nothing you send is public until then. The email
+        address you give is used only to tell you about your listing.
+      </p>
+      <p>
+        To correct anything, or to be removed, email us and we will act on it.{" "}
         {CONTACT_EMAIL ? (
           <a href={`mailto:${CONTACT_EMAIL}?subject=Dr%20Evide%20listing`}>{CONTACT_EMAIL}</a>
         ) : (
