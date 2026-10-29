@@ -31,6 +31,12 @@ export async function readJson<T>(
   req: NextRequest,
   schema: ZodType<T, ZodTypeDef, unknown>
 ): Promise<{ data: T } | NextResponse> {
+  // JSON only. A cross-site <form> can send text/plain or urlencoded with no
+  // preflight, but never application/json, so this closes form-based CSRF on
+  // every write route and makes the browser ask CORS first for anything else.
+  const type = req.headers.get("content-type")?.split(";")[0].trim().toLowerCase();
+  if (type !== "application/json") return jsonError("Expected a JSON body.", 415);
+
   const length = Number(req.headers.get("content-length") ?? 0);
   if (length > MAX_BODY_BYTES) return jsonError("Request too large.", 413);
 

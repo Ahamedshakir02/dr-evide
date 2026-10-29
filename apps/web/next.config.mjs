@@ -22,7 +22,18 @@ const nextConfig = {
   transpilePackages: ["@dr-evide/core", "@dr-evide/db"],
 
   async headers() {
-    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
+    return [
+      // Everything except the admin console gets the public policy. /admin
+      // gets a stricter, per-request nonce policy from src/middleware.ts, and
+      // a second CSP here would be enforced alongside it.
+      {
+        source: "/((?!admin$|admin/).*)",
+        headers: [...SECURITY_HEADERS, { key: "Content-Security-Policy", value: CSP }],
+      },
+      { source: "/admin", headers: [...SECURITY_HEADERS, ...ADMIN_HEADERS] },
+      { source: "/admin/:path*", headers: [...SECURITY_HEADERS, ...ADMIN_HEADERS] },
+      { source: "/api/admin/:path*", headers: ADMIN_HEADERS },
+    ];
   },
 };
 
@@ -82,7 +93,6 @@ const SECURITY_HEADERS = [
    */
   { key: "Referrer-Policy", value: "strict-origin" },
 
-  { key: "Content-Security-Policy", value: CSP },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "DENY" },
   {
@@ -107,6 +117,19 @@ const SECURITY_HEADERS = [
       "interest-cohort=()",
     ].join(", "),
   },
+];
+
+/**
+ * The admin console and its API. Never indexed, never cached by a browser or
+ * a shared proxy (the pages hold doctors' contact details and review notes),
+ * and opened in its own browsing-context group so a page it links to cannot
+ * reach back through window.opener.
+ */
+const ADMIN_HEADERS = [
+  { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+  { key: "Cache-Control", value: "no-store" },
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+  { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
 ];
 
 export default nextConfig;
