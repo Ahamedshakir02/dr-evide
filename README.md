@@ -45,12 +45,56 @@ one-copy rule.
 ## With a real database (Postgres + PostGIS)
 
 ```bash
-docker compose up -d          # starts PostGIS on :5432
+docker compose up -d          # starts PostGIS on :5432 and Redis on :6379
 cp apps/web/.env.example apps/web/.env.local   # DATABASE_URL pre-filled for the docker db
-npm run db:setup              # creates schema
-npm run db:seed               # seeds specialties + sample doctors
+npm run db:migrate            # applies schema.sql (idempotent — run it on every deploy)
+npm run db:seed               # seeds the specialties table (no doctors)
+npm run db:seed:sample        # optional, development only: 20 fictional doctors
+npm run admin:create -- --email you@example.com --name "Your Name"   # prompts for a password
 npm run dev
 ```
+
+### How real doctors get listed
+
+1. A doctor fills in **`/list-your-practice`** (`POST /api/listing-applications`):
+   name, qualifications, registration number, clinic, phone, a contact email,
+   and an explicit consent tick. Nothing is public yet.
+2. An admin signs in at **`/admin`** and reviews it. Approving it means placing
+   the clinic on the map (lat/lng — typed addresses do not geocode reliably
+   here) and, once the registration has been checked against the public
+   register, attaching that link. The doctor goes live; verification is
+   written to `credential_provenance` with the admin's name.
+3. From then on the admin can edit, verify or withdraw verification, hide,
+   republish, or permanently delete the doctor (the "remove me" request).
+   Every action lands in `admin_audit_log`.
+
+Review scores cannot be typed in by anyone: they are 25% of TrustScore and
+`doctorEditSchema` refuses them. Changing a registration number clears its
+verification in the same transaction.
+
+`npm run db:import` still loads a consented CSV in bulk.
+
+### Admin API
+
+All under `/api/admin`, all require the session cookie, and every write must
+carry a same-origin `Origin` header.
+
+| Route | |
+|---|---|
+| `POST login` · `POST logout` · `GET me` | email + password → httpOnly session cookie (12h) |
+| `GET applications?status=pending\|approved\|rejected\|all` | the review queue |
+| `GET applications/:id` · `POST …/approve` · `POST …/reject` | approve creates the doctor |
+| `GET doctors?q=&status=&verified=` · `GET/PATCH/DELETE doctors/:id` | |
+| `POST doctors/:id/verify` · `POST …/unverify` · `POST …/status` | |
+| `GET stats?days=30` | searches, empty searches per department, calls/directions, supply |
+
+### What is counted
+
+`daily_counters` keeps per-day totals of searches per department, searches
+that found nobody, profile views, and Call / Directions taps
+(`POST /api/events`, a closed list of names). No text, no location, no doctor
+id, no identity — the same rule as the in-process counters, now surviving a
+deploy.
 
 ```bash
 npm run notify:export > launch-list.csv   # the launch-email list, for a human to send from
@@ -245,7 +289,9 @@ changes a TrustScore number or an emergency red flag must be recorded there.**
 ## IMPORTANT — before any public launch
 
 - All seeded doctors are **fictional** (`is_sample=true`, every name carries "(SAMPLE)").
-  Replace with real, NMC-verified, hand-curated data. Never publish rankings of real doctors
+  They are now development-only: `db:seed` no longer adds them, production
+  refuses to seed them, and production queries never show them. Real doctors
+  come in through `/list-your-practice` and `/admin`, or `db:import`. Never publish rankings of real doctors
   without verifying credentials — and record every check in `credential_provenance`, which
   exists so "who verified this, against what, and when" always has an answer.
 - Legal review: medical disclaimer, DPDP Act 2023 (symptom text = sensitive personal data),

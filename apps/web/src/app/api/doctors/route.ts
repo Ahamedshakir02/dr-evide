@@ -9,6 +9,7 @@ import {
 import { findDoctors, isSampleMode } from "@dr-evide/db";
 import { callerKey, rateLimit } from "@/lib/rate-limit";
 import { count } from "@/lib/telemetry";
+import { guardData } from "@/lib/api";
 
 /**
  * Public, unauthenticated, and backed by a PostGIS radius scan, so it gets a
@@ -39,42 +40,46 @@ export async function GET(req: NextRequest) {
   const { specialty, lat, lng, radius, conditions } = parsed.data;
   const slug = specialty as SpecialtySlug;
 
-  const doctors = await findDoctors({ specialty: slug, lat, lng, radiusKm: radius });
+  return guardData(async () => {
+    const doctors = await findDoctors({ specialty: slug, lat, lng, radiusKm: radius });
 
-  if (doctors.length === 0) count(`search.empty.${slug}`);
+    count(`search.performed.${slug}`);
+    if (doctors.length === 0) count(`search.empty.${slug}`);
 
-  // The year is passed in rather than read inside scoring, so the same search
-  // always produces the same numbers — see RankingContext in @dr-evide/core.
-  const asOfYear = new Date().getFullYear();
-  const ranked = rankDoctors(doctors, {
-    matchedConditions: conditions,
-    radiusKm: radius,
-    asOfYear,
+    // The year is passed in rather than read inside scoring, so the same search
+    // always produces the same numbers — see RankingContext in @dr-evide/core.
+    const asOfYear = new Date().getFullYear();
+    const ranked = rankDoctors(doctors, {
+      matchedConditions: conditions,
+      radiusKm: radius,
+      asOfYear,
+    });
+
+    return NextResponse.json(
+      {
+        specialty: { slug, ...SPECIALTIES[slug] },
+        radius_km: radius,
+        count: ranked.length,
+        // Returned so the card's "12 yrs" is computed from the same year that
+        // produced the experience component of the score beside it.
+        as_of_year: asOfYear,
+        // Surfaced so the UI can say which weighting produced these numbers, and so
+        // a stale client is detectable after a weights change.
+        score_version: SCORE_VERSION,
+        // Tells the client these are fictional placeholder records, not real doctors.
+        // A database can hold sample rows too (db:seed:sample), so the rows are asked.
+        sample_data: isSampleMode() || ranked.some((d) => d.is_sample),
+        doctors: ranked,
+      },
+      {
+        /**
+         * The query carries the caller's coordinates and their routed conditions,
+         * so this response is personal to one request. `private` keeps it out of
+         * any shared cache; the short max-age still absorbs the burst that
+         * dragging the radius slider produces.
+         */
+        headers: { "cache-control": "private, max-age=30" },
+      }
+    );
   });
-
-  return NextResponse.json(
-    {
-      specialty: { slug, ...SPECIALTIES[slug] },
-      radius_km: radius,
-      count: ranked.length,
-      // Returned so the card's "12 yrs" is computed from the same year that
-      // produced the experience component of the score beside it.
-      as_of_year: asOfYear,
-      // Surfaced so the UI can say which weighting produced these numbers, and so
-      // a stale client is detectable after a weights change.
-      score_version: SCORE_VERSION,
-      // Tells the client these are fictional placeholder records, not real doctors.
-      sample_data: isSampleMode(),
-      doctors: ranked,
-    },
-    {
-      /**
-       * The query carries the caller's coordinates and their routed conditions,
-       * so this response is personal to one request. `private` keeps it out of
-       * any shared cache; the short max-age still absorbs the burst that
-       * dragging the radius slider produces.
-       */
-      headers: { "cache-control": "private, max-age=30" },
-    }
-  );
 }

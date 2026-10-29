@@ -1,4 +1,12 @@
-// Seeds specialties + sample doctors. Usage: DATABASE_URL=... npm run db:seed
+// Seeds the specialties table, and with --sample the fictional doctors.
+//
+//   DATABASE_URL=... npm run db:seed            specialties only — safe in production
+//   DATABASE_URL=... npm run db:seed:sample     + 20 fictional doctors, for development
+//
+// Sample doctors are refused when NODE_ENV=production. Even if they got in,
+// the public queries would not show them there (see publicFilter in
+// src/index.ts) — but a production database is the record of who we have
+// listed, and invented people do not belong in it.
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -34,7 +42,22 @@ for (const [slug, name, description] of specialties) {
   );
 }
 
-for (const d of doctors) {
+const withSample = process.argv.includes("--sample");
+if (withSample && process.env.NODE_ENV === "production") {
+  console.error("Refusing to seed fictional doctors with NODE_ENV=production.");
+  await client.end();
+  process.exit(1);
+}
+if (withSample) {
+  const { rows } = await client.query("SELECT count(*)::int AS n FROM doctors WHERE is_sample");
+  if (rows[0].n > 0) {
+    console.log(`Sample doctors already present (${rows[0].n}); not seeding them again.`);
+    await client.end();
+    process.exit(0);
+  }
+}
+
+for (const d of withSample ? doctors : []) {
   const { rows } = await client.query(
     `INSERT INTO doctors (
        full_name, specialty_slug, sub_specialties, conditions, qualifications,
@@ -69,5 +92,9 @@ for (const d of doctors) {
 }
 
 await client.end();
-console.log(`Seeded ${specialties.length} specialties and ${doctors.length} sample doctors.`);
-console.log("All records are fictional (is_sample=true) with sample-data provenance.");
+if (withSample) {
+  console.log(`Seeded ${specialties.length} specialties and ${doctors.length} sample doctors.`);
+  console.log("All records are fictional (is_sample=true) with sample-data provenance.");
+} else {
+  console.log(`Seeded ${specialties.length} specialties. No doctors: add real ones through /admin or db:import.`);
+}

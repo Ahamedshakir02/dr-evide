@@ -12,6 +12,82 @@ Rules for this file:
 
 ---
 
+## 2026-10-28 — v0.5 backend: real doctors, entered by people
+
+Until now the only way a real doctor reached the database was a CSV and a
+person with a terminal, there was no admin side at all, and a production
+deployment that lost its `DATABASE_URL` served twenty fictional doctors to the
+public. This entry is the backend that makes the product run on real data.
+Nothing here changes a TrustScore number or an emergency red flag.
+`SCORE_VERSION` stays `1.0.0`.
+
+### What exists now
+
+- **`listing_applications`** and `POST /api/listing-applications`: a doctor
+  asks to be listed, with consent recorded and versioned (`CONSENT_VERSION`).
+  Rate limited, size capped, honeypot field, nothing public until reviewed.
+- **An admin API** behind email + password sign-in (`admin_users`,
+  `admin_sessions`): review the queue, approve (which creates the doctor and,
+  with an evidence link, writes provenance under the admin's name), reject,
+  edit, verify, withdraw verification, hide, republish, delete.
+- **`admin_audit_log`**, written in the same transaction as each change.
+- **`doctors.status`** (`published` | `hidden`), filtered on by every public
+  query, plus a unique index on real registration numbers.
+- **`daily_counters`**: searches, empty searches per department, profile views,
+  Call and Directions taps, kept per IST day instead of reset on deploy.
+- `db:migrate` (one transaction, idempotent) and `admin:create`.
+
+### Decisions
+
+**Production refuses sample data.** `dataMode()` is `database`, `sample`
+(development, or production with `ALLOW_SAMPLE_DATA=true`), or
+`unconfigured`, in which every doctor query throws and the API answers 503.
+A missing environment variable is a deploy mistake and now looks like one.
+Sample rows in a real database are filtered out in production too.
+
+**Sessions, not JWTs.** Signing out or disabling an admin has to take effect
+immediately; a revocable JWT is a session table with extra cryptography. Only
+the SHA-256 of the token is stored. Cookie is httpOnly, `SameSite=Strict`,
+`__Host-` prefixed in production; writes additionally need a same-origin
+`Origin` header.
+
+**Considered and rejected: OAuth sign-in.** Better for a team, but it makes the
+console depend on an account that has to be created first. Replacing it later
+only replaces `login()`.
+
+**Admins cannot type review scores.** `review_*` are 25% of TrustScore;
+`doctorEditSchema` is `.strict()` and leaves them out. Likewise `nmc_verified`
+changes only through verify/unverify, which write provenance. Changing a
+registration number clears verification in the same statement.
+
+**Delete means gone.** Removing a doctor also removes their application (it
+holds a contact email). The audit line keeps the id and the fact, not the name.
+
+**Which doctor was called is not recorded.** A per-doctor count of "people who
+searched for a dermatologist and rang this one" is a health signal about that
+doctor's patients. The counter says a contact happened, not with whom.
+
+### A bug found by running against a real Redis
+
+With `REDIS_URL` set and Redis down, **every search hung for 15 seconds or
+more**: `client.connect()` keeps retrying under `reconnectStrategy` and never
+rejects, and with the offline queue on, commands wait for a reconnect that may
+not come. The mocked tests could not see it. Now: the first connect is bounded
+at two seconds and retried after 30, the offline queue is off, and each
+rate-limit command gets 500ms before memory takes over. Checked by stopping the
+server mid-run: searches answered in ~0.5s, and returned to Redis on restart.
+
+### Verified
+
+Against PostGIS 16-3.4 and Redis 7: migrate twice (idempotent), seed, create an
+admin, then by HTTP — submit, duplicate, invalid fields, unauthenticated and
+cross-origin refusals, wrong password, sign in, approve with verification,
+double approve (409), public search shows the doctor, edit clears
+verification, review fields refused, hide (public 404), audit and provenance
+history, sample rows refused, events and stats, delete, sign out.
+
+---
+
 ## 2026-08-10 — both apps driven at once, and Malayalam turns out to break the layout
 
 The previous entry got the mobile app onto a screen. This one got **both** apps onto

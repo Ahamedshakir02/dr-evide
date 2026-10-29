@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { doctorIdSchema } from "@dr-evide/core";
 import { getDoctor } from "@dr-evide/db";
+import { guardData } from "@/lib/api";
 
 // Next 15: route params are a Promise and must be awaited.
 export async function GET(
@@ -13,8 +14,9 @@ export async function GET(
     return NextResponse.json({ error: "Invalid id." }, { status: 400 });
   }
 
-  const doctor = await getDoctor(parsed.data);
-  if (!doctor) return NextResponse.json({ error: "Doctor not found." }, { status: 404 });
-
-  return NextResponse.json({ doctor });
+  return guardData(async () => {
+    const doctor = await getDoctor(parsed.data);
+    if (!doctor) return NextResponse.json({ error: "Doctor not found." }, { status: 404 });
+    return NextResponse.json({ doctor });
+  });
 }
