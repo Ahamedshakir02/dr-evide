@@ -1,4 +1,133 @@
-# QA — Dr Evide sample-data web demo
+# QA — Dr Evide backend against a real database
+
+Date: 2026-10-28 · Branch under test: backend PR #1 (`claude/project-thread-e1xv28`)
+Stack: Postgres 16 + PostGIS 3.4 (`postgis/postgis:16-3.4`), Redis 7, `next build && next start`
+
+## Result
+
+95 integration tests, all against real PostGIS (and real Redis for the limiter). The
+apply → approve → public → edit → verify → hide → delete journey works end to end.
+**5 bugs found.** Bugs 1, 2, 3 and 5 (and both minor items) are fixed on the backend
+branch, and their tests now run as ordinary regression tests. Bug 4 is fixed in PR #3.
+
+## How to run
+
+```sh
+docker compose up -d db redis
+psql postgres://drevide:drevide@localhost:5432/drevide -c 'CREATE DATABASE drevide_test'
+TEST_DATABASE_URL=postgres://drevide:drevide@localhost:5432/drevide_test \
+TEST_REDIS_URL=redis://localhost:6379/15 \
+  npm run test:integration
+```
+
+Every table is truncated before each test, so the harness refuses a database whose
+name does not contain `test`. Without `TEST_DATABASE_URL` the suites skip; `npm test`
+does not run them at all.
+
+## What is covered
+
+| Area | File | Tests |
+|------|------|-------|
+| Search: PostGIS radius, specialty, nearest-first, hidden and sample gates, sitemap, unique reg. no. | `packages/db/test/integration/search.int.test.ts` | 10 |
+| Applications: submit, duplicates, approve (edits, verification, audit, rollback, concurrent approve), reject | `packages/db/test/integration/applications.int.test.ts` | 20 |
+| Admin data: sessions (expiry, disable, sweep), edit, reg-number change clears verification, verify/unverify history, hide, delete-me cascade, filters, LIKE escaping, stats | `packages/db/test/integration/admin.int.test.ts` | 20 |
+| Public routes: health, search + ranking, profile, listing form (field errors, honeypot, 413, rate limit), notify, events, symptom routing | `apps/web/test/integration/public-api.int.test.ts` | 20 |
+| Admin routes: sign-in (cookie flags, hashed token, same 401, disabled, CSRF, per-account and per-IP lockout), sign-out, every route needs a session, the full journey, review edge cases, stats | `apps/web/test/integration/admin-api.int.test.ts` | 22 |
+| Rate limit on real Redis: Lua script, expiry, shared across processes | `apps/web/test/integration/rate-limit-redis.int.test.ts` | 3 |
+
+## Bugs
+
+### 1. Huge ids crash with a 500 (medium) — fixed
+
+`/api/doctors/99999999999` → **500** (`value "99999999999" is out of range for type
+integer`); `/doctor/99999999999` shows "Something went wrong" instead of a 404. Same
+for every admin `[id]` route. `doctorIdSchema` in `packages/core/src/schemas.ts` is
+`z.coerce.number().int().positive()` with no upper bound.
+Fix: add `.max(2_147_483_647)`. Test: `public-api.int.test.ts`.
+
+### 2. Duplicate pending applications (medium) — fixed
+
+Five simultaneous submissions with one registration number file five pending
+applications (reproduced 30/30 runs). `submitApplication` checks, then inserts, with
+nothing unique behind it. A double-tapped Submit on a slow phone connection does this.
+The admin then sees duplicates, and approving one makes the others a 409.
+Fix: a partial unique index, `ON listing_applications (nmc_reg_no) WHERE status =
+'pending'`, and map `23505` to `{ status: "duplicate" }`.
+Test: `applications.int.test.ts`.
+
+### 3. Simultaneous edits to one registration number crash (low) — fixed
+
+Two admins giving two doctors the same registration number at the same moment: one
+gets 200, the other an unhandled unique-violation (500) instead of the 409 the console
+shows. `updateDoctor` and `approveApplication` check then write; the index catches it
+but nobody maps the error.
+Fix: catch `23505` on `doctors_nmc_reg_no_idx` in both and return
+`duplicate_registration`. Test: `admin-api.int.test.ts`.
+
+### 4. Sign-out leaves the cookie in the browser in production (low) — fixed in PR #3
+
+In production the cookie is `__Host-dre_admin`. Logout clears it with
+`Set-Cookie: __Host-dre_admin=; Path=/; Max-Age=0` — no `Secure`, which browsers
+require for a `__Host-` cookie, so they ignore it. Checked in Chromium against
+`next start`: the cookie is still there after sign-out. The session row is deleted, so
+the old cookie gets a 401 — not a security hole, but the console will see a "signed
+in" cookie that is dead. Fix: pass the same `secure`/`httpOnly`/`sameSite` options when
+clearing (`apps/web/src/lib/admin-auth.ts`, `logout`).
+
+### 5. `admin:create` accepts emails that can never sign in (low) — fixed
+
+`npm run admin:create -- --email ops@localhost ...` succeeds, but the login route's
+`emailSchema` requires a dot in the domain, so that admin always gets a 400. Fix:
+validate with the same rule in `packages/db/create-admin.mjs`.
+
+### Minor (both fixed)
+
+- `GET /api/admin/stats?days=-5` echoes `days: -5` while reading 1 day.
+- Unverifying a doctor who was never verified still writes a "Verification withdrawn" provenance line.
+
+---
+
+## Browser click-through — frontend PR #5
+
+Run on PR #5 merged with the fixed backend (#1) and security (#3), `next build && next start`
+in production mode, Chromium at 1280px and Pixel 5 (393px).
+
+Works: list-your-practice (field errors, focus on first error, success, duplicate notice,
+honeypot hidden, no overflow at 393px); admin sign-in (wrong password message), review
+queue, approve with map pin + verification evidence → doctor appears verified in public
+search; edit (fee saved, history line), hide → gone from search → publish; profile page
+sends `profile_view` and `call` beacons; stats tab counts searches, empty searches,
+views and calls; delete asks for the name typed back and removes the doctor; sign out
+clears the cookie (PR #3) and returns to the login screen. `/admin` is `noindex`. No
+console errors apart from blocked web fonts in this sandbox.
+
+Not covered: the mobile app's offline state (Expo; no device in this sandbox).
+
+### Frontend bugs
+
+All four are fixed (F1, F2, F4 on PR #5; F3 on PR #1) and re-checked in the browser
+on PR #5 + #1 + #3: the department and phone errors now read "Choose your department."
+and "Enter the clinic phone number.", the doctor's history starts with "Approved from
+listing application", and "Checked against" defaults to the state council when the
+doctor named one. `admin-history.test.ts` now runs in `npm run test:integration`.
+
+- **F1 (medium) — raw validation text shown to doctors.** Submitting the sign-up form
+  without a department shows `Invalid enum value. Expected 'dermatology' | 'cardiology' |
+  … received ''` under Department. Needs a plain message ("Choose your department"),
+  ideally via an errorMap on `specialtySlugSchema` in `listingApplicationSchema`.
+- **F2 (low) — wrong message for an empty phone.** An empty "Clinic phone" says "Enter a
+  phone number with digits only." It should say the phone is required.
+- **F3 (low) — approval missing from a doctor's history.** Right after approving, the
+  doctor's History says "No admin changes yet": `application.approve` is logged against
+  the application, and the doctor page only reads doctor rows. Show it, or log a
+  `doctor.create` line too.
+- **F4 (low, UX) — "Checked against" defaults to NMC registry** in the approve form even
+  when the doctor named a state council (TCMC). Easy to file the wrong source; default to
+  "state council" when `registration_council` is set, or require a choice.
+
+---
+
+# Earlier pass — Dr Evide sample-data web demo
 
 URL: `http://localhost:3000` · Date: 2026-09-11 · Viewports: 1265px desktop and 375px mobile
 
