@@ -26,7 +26,8 @@
     "notify:export": "node packages/db/export-notifications.mjs",
     "db:migrate": "node packages/db/setup.mjs",
     "db:seed:sample": "node packages/db/seed.mjs --sample",
-    "admin:create": "node packages/db/create-admin.mjs"
+    "admin:create": "node packages/db/create-admin.mjs",
+    "smoke": "node scripts/smoke.mjs"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

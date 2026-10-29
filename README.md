@@ -44,6 +44,9 @@ one-copy rule.
 
 ## With a real database (Postgres + PostGIS)
 
+Deploying to production (Vercel, managed PostGIS, Redis, every env var): see
+[docs/DEPLOY.md](docs/DEPLOY.md).
+
 ```bash
 docker compose up -d          # starts PostGIS on :5432 and Redis on :6379
 cp apps/web/.env.example apps/web/.env.local   # DATABASE_URL pre-filled for the docker db

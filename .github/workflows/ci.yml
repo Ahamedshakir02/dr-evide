@@ -30,6 +30,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Lint
+        run: npm run lint
+
       # The suite includes the emergency red-flag corpus. A failure there is a
       # release blocker, not a test to update.
       - name: Test
@@ -37,3 +40,100 @@ jobs:
 
       - name: Build web
         run: npm run build
+
+  # The deploy path, end to end, against the same database engine production
+  # runs: migrate + seed + build exactly as Vercel does it, migrate a second
+  # time to prove schema.sql stays idempotent, then start the production build
+  # and smoke-test it with Redis behind the rate limiter.
+  integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: drevide
+          POSTGRES_PASSWORD: drevide
+          POSTGRES_DB: drevide
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U drevide"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgres://drevide:drevide@localhost:5432/drevide
+      REDIS_URL: redis://localhost:6379
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Deploy build (migrate, seed, next build)
+        run: node scripts/vercel-build.mjs
+        env:
+          VERCEL_ENV: production
+
+      - name: Migrations are idempotent
+        run: npm run db:migrate
+
+      # Fictional doctors so the radius search has someone to find. Loaded
+      # without NODE_ENV=production, which is the only way seed.mjs allows it.
+      - name: Load sample doctors
+        run: npm run db:seed:sample
+
+      - name: Start production server
+        run: |
+          npm start > web.log 2>&1 &
+          for i in $(seq 60); do
+            curl -sf http://localhost:3000/api/health > /dev/null && exit 0
+            sleep 1
+          done
+          cat web.log
+          exit 1
+        env:
+          NODE_ENV: production
+          ALLOW_SAMPLE_DATA: "true"
+
+      - name: Smoke test
+        run: node scripts/smoke.mjs
+        env:
+          BASE_URL: http://localhost:3000
+          EXPECT_DOCTORS: "true"
+
+      - name: Rate limiter used Redis
+        run: |
+          keys=$(docker exec "${{ job.services.redis.id }}" redis-cli --scan --pattern 'rl:*')
+          echo "$keys"
+          test -n "$keys"
+
+      # The integration suite truncates tables before every test, so it gets its
+      # own database (its harness refuses a name without "test") and its own
+      # Redis db, leaving the server above untouched.
+      - name: Create test database
+        run: docker exec "${{ job.services.postgres.id }}" createdb -U drevide drevide_test
+
+      # --if-present: the suite and its script arrive with the QA work; until
+      # then this step is a no-op rather than a failure.
+      - name: Integration tests
+        run: npm run test:integration --if-present
+        env:
+          TEST_DATABASE_URL: postgres://drevide:drevide@localhost:5432/drevide_test
+          TEST_REDIS_URL: redis://localhost:6379/15
+
+      - name: Server log
+        if: failure()
+        run: cat web.log

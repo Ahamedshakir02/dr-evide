@@ -7,7 +7,7 @@
 // this script is the only way an admin account comes into existence.
 import { randomBytes, scrypt as scryptCb } from "node:crypto";
 import { promisify } from "node:util";
-import pg from "pg";
+import { newClient } from "./client.mjs";
 
 const scrypt = promisify(scryptCb);
 // Must match apps/web/src/lib/admin-auth.ts.
@@ -75,7 +75,7 @@ async function readPassword() {
   return a;
 }
 
-const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
+const client = newClient();
 await client.connect();
 
 if (disable) {

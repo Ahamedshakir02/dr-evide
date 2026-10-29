@@ -10,7 +10,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import pg from "pg";
+import { newClient } from "./client.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 // The one copy of the sample dataset, shared with both apps.
@@ -31,7 +31,7 @@ const specialties = [
   ["orthopedics", "Orthopedics", "Bones, joints, muscles, and back problems"],
 ];
 
-const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
+const client = newClient();
 await client.connect();
 
 for (const [slug, name, description] of specialties) {

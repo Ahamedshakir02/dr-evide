@@ -18,7 +18,7 @@
 // therefore checked against the `specialties` table, which seed.mjs fills from
 // the one taxonomy — the database stays the single list.
 import { readFileSync } from "node:fs";
-import pg from "pg";
+import { newClient } from "./client.mjs";
 
 const args = process.argv.slice(2);
 const file = args.find((a) => !a.startsWith("--") && args[args.indexOf(a) - 1] !== "--verified-by");
@@ -87,7 +87,7 @@ let known = null;
 let existingRegNos = new Set();
 let client = null;
 if (process.env.DATABASE_URL) {
-  client = new pg.Client({ connectionString: process.env.DATABASE_URL });
+  client = newClient();
   await client.connect();
   known = new Set((await client.query("SELECT slug FROM specialties")).rows.map((r) => r.slug));
   existingRegNos = new Set(
